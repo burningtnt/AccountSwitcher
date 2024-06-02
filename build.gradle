@@ -23,6 +23,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modRuntimeOnly "net.fabricmc.fabric-api:fabric-resource-loader-v0:0.11.10+1802ada577"
 
     // https://mvnrepository.com/artifact/org.eclipse.swt/org.eclipse.swt.win32.win32.x86_64
     implementation group: 'org.eclipse.swt', name: 'org.eclipse.swt.win32.win32.x86_64', version: '4.3'

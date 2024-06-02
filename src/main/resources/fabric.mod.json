@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "id": "accountswitcher",
+  "id": "accountsx",
   "version": "1.0.0",
-  "name": "Account Switcher",
+  "name": "Accounts X",
   "description": "",
   "authors": [
-    "IAFEnvoy"
+    "IAFEnvoy", "Burning_TNT"
   ],
   "license": "GPL-3.0",
   "environment": "client",
   "entrypoints": {
     "client": [
-      "iafenvoy.accountswitcher.AccountSwitcher"
+      "net.burningtnt.accountsx.AccountsX"
     ]
   },
   "mixins": [
-    "accountswitcher.mixins.json"
+    "accountsx.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.12.12",
-    "minecraft": "1.19.x",
+    "minecraft": "1.20.x",
     "java": ">=17"
   }
 }

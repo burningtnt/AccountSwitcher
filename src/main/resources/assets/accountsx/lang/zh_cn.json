@@ -1,0 +1,30 @@
+{
+  "as.general.login": "登录",
+  "as.general.action.close": "关闭",
+  "as.general.action.ok": "我明白了",
+
+  "as.account.objects.player_name": "玩家 ID",
+  "as.account.objects.player_uuid": "玩家 UUID",
+  "as.account.objects.server_domain": "认证服务器域名",
+  "as.account.objects.user_name": "用户 ID",
+  "as.account.objects.user_password": "用户密码",
+
+  "as.account.action.add_account": "添加账户",
+  "as.account.action.operating": "正在操作 ...",
+
+  "as.account.state.unauthorized": "未登录",
+  "as.account.state.authorizing": "登录中",
+  "as.account.state.refreshing": "刷新中",
+  "as.account.state.unauthorized": "正常可用",
+  
+  "as.account.type.env_default.name": "游戏默认账户",
+  "as.account.type.env_default.using": "正在使用游戏默认账号：%s",
+  "as.account.type.offline.name": "离线账号",
+  "as.account.type.offline.using": "正在使用离线账号：%s",
+  "as.account.type.microsoft.name": "微软账号",
+  "as.account.type.microsoft.using": "正在使用微软账号：%s",
+  "as.account.type.injector.name": "外置登录账号",
+  "as.account.type.injector.using": "正在使用外置登录账号：%s",
+  "as.account.type.custom.name": "自定义账号",
+  "as.account.type.custom.using": "正在使用自定义账号：%s"
+}
