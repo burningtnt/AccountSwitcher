@@ -6,6 +6,8 @@ import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import net.burningtnt.accountsx.utils.threading.ThreadState;
+import net.burningtnt.accountsx.utils.threading.Threading;
 
 import java.io.IOException;
 import java.util.Map;
@@ -13,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @JsonAdapter(BaseAccount.Adapter.class)
 public abstract class BaseAccount {
-    public static final class Adapter implements TypeAdapterFactory {
+    static final class Adapter implements TypeAdapterFactory {
         @Override
         @SuppressWarnings("unchecked")
         public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> typeToken) {
@@ -45,13 +47,13 @@ public abstract class BaseAccount {
     }
 
     public static final class AccountStorage {
-        public final String accessToken;
+        private final String accessToken;
 
-        public final String playerName;
+        private final String playerName;
 
-        public final String playerUUID;
+        private final String playerUUID;
 
-        public final transient AccountState state;
+        private final transient AccountState state;
 
         private AccountStorage() {
             this.accessToken = null;
@@ -65,6 +67,22 @@ public abstract class BaseAccount {
             this.playerName = playerName;
             this.playerUUID = playerUUID;
             this.state = state;
+        }
+
+        public String getAccessToken() {
+            return accessToken;
+        }
+
+        public String getPlayerName() {
+            return playerName;
+        }
+
+        public String getPlayerUUID() {
+            return playerUUID;
+        }
+
+        public AccountState getState() {
+            return state;
         }
     }
 
@@ -81,18 +99,6 @@ public abstract class BaseAccount {
         return storage;
     }
 
-    public final String getAccessToken() {
-        return this.storage.accessToken;
-    }
-
-    public final String getPlayerName() {
-        return this.storage.playerName;
-    }
-
-    public final String getPlayerUUID() {
-        return this.storage.playerUUID;
-    }
-
     public final AccountState getAccountState() {
         return this.storage.state;
     }
@@ -101,11 +107,17 @@ public abstract class BaseAccount {
         return type;
     }
 
+    @ThreadState(ThreadState.ACCOUNT_WORKER)
     public final void setProfile(String accessToken, String playerName, String playerUUID) {
+        Threading.checkAccountWorkerThread();
+
         this.storage = new AccountStorage(accessToken, playerName, playerUUID, AccountState.AUTHORIZED);
     }
 
+    @ThreadState(ThreadState.ACCOUNT_WORKER)
     public final void setProfileState(AccountState state) {
+        Threading.checkAccountWorkerThread();
+
         AccountStorage s = this.storage;
         this.storage = new AccountStorage(s.accessToken, s.playerName, s.playerUUID, state);
     }

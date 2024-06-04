@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "accountsx",
-  "version": "1.0.0",
+  "version": "${version}",
   "name": "Accounts X",
   "description": "",
   "authors": [
-    "IAFEnvoy", "Burning_TNT"
+    "IAFEnvoy", "Burning_TNT", "JianMoOvO"
   ],
   "license": "GPL-3.0",
   "environment": "client",

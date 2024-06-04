@@ -3,21 +3,22 @@ package net.burningtnt.accountsx.accounts;
 import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import net.burningtnt.accountsx.accounts.api.Memory;
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Session;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public interface AccountProvider<T extends BaseAccount> {
-    @Nullable
-    <S extends UIScreen> S configure(Supplier<S> screenSupplier);
+    int STATE_IMMEDIATE_CLOSE = 0;
 
-    void validate(UIScreen screen, Memory memory) throws IllegalArgumentException;
+    int STATE_HANDLE = 1;
+
+    void configure(UIScreen screen);
+
+    int validate(UIScreen screen, Memory memory) throws IllegalArgumentException;
 
     T login(Memory memory) throws IOException;
 
@@ -30,8 +31,8 @@ public interface AccountProvider<T extends BaseAccount> {
 
         try {
             return new AccountSession(
-                    new Session(s.playerName, s.playerUUID, s.accessToken, Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
-                    sessionService, service.createUserApiService(s.accessToken)
+                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                    sessionService, service.createUserApiService(s.getAccessToken())
             );
         } catch (AuthenticationException e) {
             throw new IOException("Failed to create session service.", e);

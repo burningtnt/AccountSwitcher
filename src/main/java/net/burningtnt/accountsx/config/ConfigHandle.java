@@ -15,8 +15,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class ConfigProcessor {
-    private ConfigProcessor() {
+public final class ConfigHandle {
+    private ConfigHandle() {
     }
 
     private static final String CONFIG_LOCATION = "accountsx/accounts.json";

@@ -1,13 +1,8 @@
 package net.burningtnt.accountsx.gui;
 
-import net.burningtnt.accountsx.AccountsX;
-import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountType;
-import net.burningtnt.accountsx.accounts.BaseAccount;
-import net.burningtnt.accountsx.accounts.api.Memory;
 import net.burningtnt.accountsx.config.AccountManager;
-import net.burningtnt.accountsx.config.AccountTaskExecutor;
-import net.burningtnt.accountsx.gui.impl.DefaultMemory;
+import net.burningtnt.accountsx.config.AccountWorker;
 import net.burningtnt.accountsx.gui.impl.UIScreenImpl;
 import net.burningtnt.accountsx.utils.I18NHelper;
 import net.minecraft.client.gui.DrawContext;
@@ -45,6 +40,10 @@ public class AccountScreen extends Screen {
         this.client.setScreen(this.parent);
     }
 
+    public void syncAccounts() {
+        this.accountListWidget.syncAccounts();
+    }
+
     @Override
     protected void init() {
         super.init();
@@ -79,43 +78,7 @@ public class AccountScreen extends Screen {
                     button -> {
                         assert this.client != null;
 
-                        AccountProvider<?> provider = type.getAccountProvider();
-
-                        UIScreenImpl screen = provider.configure(UIScreenImpl::new);
-                        if (screen != null) {
-                            this.client.setScreen(screen.bind(this, loginScreen -> {
-                                Memory memory = new DefaultMemory();
-
-                                try {
-                                    provider.validate(screen, memory);
-                                } catch (IllegalArgumentException e) {
-                                    AccountsX.LOGGER.warn("Invalid account argument.", e);
-                                    return;
-                                }
-
-                                AccountTaskExecutor.submit(() -> {
-                                    BaseAccount account = provider.login(memory);
-
-                                    this.client.send(() -> {
-                                        AccountManager.addAccount(account);
-
-                                        this.accountListWidget.syncAccounts();
-                                    });
-                                });
-
-                                loginScreen.close();
-                            }));
-                        } else {
-                            AccountTaskExecutor.submit(() -> {
-                                BaseAccount account = provider.login(null);
-
-                                this.client.send(() -> {
-                                    AccountManager.addAccount(account);
-
-                                    this.accountListWidget.syncAccounts();
-                                });
-                            });
-                        }
+                        UIScreenImpl.login(this.client, this, type.getAccountProvider());
                     }
             ));
 
@@ -128,7 +91,7 @@ public class AccountScreen extends Screen {
         super.renderBackground(context);
         this.accountListWidget.render(context, mouseX, mouseY, delta);
 
-        context.drawCenteredTextWithShadow(this.textRenderer, AccountTaskExecutor.isRunning() ? WORKING : this.title, this.width / 2 + LAYOUT_ENTRY_X / 2, LAYOUT_VERTICAL_SPACING, 0xFFFFFF);
+        context.drawCenteredTextWithShadow(this.textRenderer, AccountWorker.isRunning() ? WORKING : this.title, this.width / 2 + LAYOUT_ENTRY_X / 2, LAYOUT_VERTICAL_SPACING, 0xFFFFFF);
         context.drawCenteredTextWithShadow(this.textRenderer, AccountManager.getCurrentAccountInfoText(), this.width / 2 + LAYOUT_ENTRY_X / 2, this.height - LAYOUT_VERTICAL_SPACING, 0xFFFFFF);
 
         context.drawCenteredTextWithShadow(

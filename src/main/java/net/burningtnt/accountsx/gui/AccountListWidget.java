@@ -6,7 +6,7 @@ import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.AccountType;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 import net.burningtnt.accountsx.config.AccountManager;
-import net.burningtnt.accountsx.config.AccountTaskExecutor;
+import net.burningtnt.accountsx.config.AccountWorker;
 import net.burningtnt.accountsx.utils.I18NHelper;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -49,7 +49,7 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
     public void setSelected(@Nullable AccountListWidget.AccountEntry entry) {
         if (entry != null) {
             if (AccountManager.getCurrentAccount() != entry.account) {
-                AccountTaskExecutor.submit(() -> {
+                AccountWorker.submit(() -> {
                     if (AccountManager.getCurrentAccount() == entry.account) {
                         return;
                     }
@@ -60,7 +60,7 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
                         AccountManager.switchAccount(entry.account, session);
 
                         super.setSelected(entry);
-                        client.getNarratorManager().narrate((Text.translatable("narrator.select", entry.account.getPlayerName())).getString());
+                        client.getNarratorManager().narrate((Text.translatable("narrator.select", entry.account.getAccountStorage().getPlayerName())).getString());
                     });
                 });
             }
@@ -106,9 +106,9 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
                     (int) (scale * Math.min(entryHeight, AccountListWidget.this.bottom - y))
             );
 
-            client.textRenderer.draw(this.account.getPlayerName(), (float) (x + 32 + 3), (float) (y + 1), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
-            client.textRenderer.draw(I18NHelper.translate(account.getAccountType()), (float) (x + 32 + 3), (float) (y + 1 + 9), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
-            client.textRenderer.draw(I18NHelper.translateAccountState(this.account.getAccountState()), (float) (x + 32 + 3), (float) (y + 1 + 18), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+            client.textRenderer.draw(this.account.getAccountStorage().getPlayerName(), (float) (x + 32 + 3), (float) (y + 1), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+            client.textRenderer.draw(I18NHelper.translate(this.account.getAccountType()), (float) (x + 32 + 3), (float) (y + 1 + 9), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+            client.textRenderer.draw(I18NHelper.translate(this.account.getAccountState()), (float) (x + 32 + 3), (float) (y + 1 + 18), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
             RenderSystem.disableScissor();
 
             if (this.account.getAccountType() != AccountType.ENV_DEFAULT) {

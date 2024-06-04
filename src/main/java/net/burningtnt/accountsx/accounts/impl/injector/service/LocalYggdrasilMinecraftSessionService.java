@@ -1,4 +1,4 @@
-package net.burningtnt.accountsx.utils.auth;
+package net.burningtnt.accountsx.accounts.impl.injector.service;
 
 import com.google.common.collect.Iterables;
 import com.google.gson.Gson;

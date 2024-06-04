@@ -6,34 +6,27 @@ import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.BaseAccount;
-import net.burningtnt.accountsx.accounts.api.Memory;
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Session;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
     private static final String GUID_PLAYER_NAME = "guid:as.login.offline.widgets.player_name";
     private static final String GUID_PLAYER_UUID = "guid:as.login.offline.widgets.player_uuid";
 
     @Override
-    @Nullable
-    public <S extends UIScreen> S configure(Supplier<S> screenSupplier) {
-        S screen = screenSupplier.get();
-
+    public void configure(UIScreen screen) {
         screen.setTitle("as.general.login");
         screen.putTextInput(GUID_PLAYER_NAME, "as.account.objects.player_name");
         screen.putTextInput(GUID_PLAYER_UUID, "as.account.objects.player_uuid");
-
-        return screen;
     }
 
     @Override
-    public void validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
+    public int validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
         memory.set(GUID_PLAYER_NAME, screen.getTextInput(GUID_PLAYER_NAME));
 
         String playerUUIDString = screen.getTextInput(GUID_PLAYER_UUID);
@@ -48,6 +41,8 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
                 throw new IllegalArgumentException("Cannot parse current UUID: " + playerUUIDString);
             }
         }
+
+        return STATE_IMMEDIATE_CLOSE;
     }
 
     @Override
@@ -61,10 +56,12 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
 
     @Override
     public void refresh(OfflineAccount account) {
+        BaseAccount.AccountStorage s = account.getAccountStorage();
+
         account.setProfile(
                 UUID.randomUUID().toString().replace("-", ""),
-                account.getPlayerName(),
-                account.getPlayerUUID()
+                s.getPlayerName(),
+                s.getPlayerUUID()
         );
     }
 
@@ -74,7 +71,7 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
         BaseAccount.AccountStorage s = account.getAccountStorage();
 
         return new AccountSession(
-                new Session(s.playerName, s.playerUUID, s.accessToken, Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
                 sessionService, UserApiService.OFFLINE
         );
     }

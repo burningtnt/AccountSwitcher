@@ -7,18 +7,16 @@ import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.BaseAccount;
-import net.burningtnt.accountsx.accounts.api.Memory;
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
+import net.burningtnt.accountsx.accounts.impl.injector.service.InjectorEnvironment;
+import net.burningtnt.accountsx.accounts.impl.injector.service.LocalYggdrasilMinecraftSessionService;
 import net.burningtnt.accountsx.utils.IOUtils;
-import net.burningtnt.accountsx.utils.auth.InjectorEnvironment;
-import net.burningtnt.accountsx.utils.auth.LocalYggdrasilMinecraftSessionService;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Session;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public class InjectorAccountProvider implements AccountProvider<InjectorAccount> {
     private static final String GUID_SERVER_DOMAIN = "guid:as.login.injector.widgets.server_url";
@@ -26,22 +24,20 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
     private static final String GUID_USER_UUID = "guid:as.login.injector.widgets.user_password";
 
     @Override
-    public <S extends UIScreen> @Nullable S configure(Supplier<S> screenSupplier) {
-        S screen = screenSupplier.get();
-
+    public void configure(UIScreen screen) {
         screen.setTitle("as.general.login");
         screen.putTextInput(GUID_SERVER_DOMAIN, "as.account.objects.server_domain");
         screen.putTextInput(GUID_USER_NAME, "as.account.objects.user_name");
         screen.putTextInput(GUID_USER_UUID, "as.account.objects.user_password");
-
-        return screen;
     }
 
     @Override
-    public void validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
+    public int validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
         memory.set(GUID_SERVER_DOMAIN, screen.getTextInput(GUID_SERVER_DOMAIN));
         memory.set(GUID_USER_NAME, screen.getTextInput(GUID_USER_NAME));
         memory.set(GUID_USER_UUID, screen.getTextInput(GUID_USER_UUID));
+
+        return STATE_IMMEDIATE_CLOSE;
     }
 
     @Override
@@ -109,12 +105,12 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
 
         try {
             return new AccountSession(
-                    new Session(s.playerName, s.playerUUID, s.accessToken, Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
-                    sessionService, authenticationService.createUserApiService(s.accessToken)
+                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                    sessionService, authenticationService.createUserApiService(s.getAccessToken())
             );
         } catch (AuthenticationException e) {
             return new AccountSession(
-                    new Session(s.playerName, s.playerUUID, s.accessToken, Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
                     sessionService, UserApiService.OFFLINE
             );
         }

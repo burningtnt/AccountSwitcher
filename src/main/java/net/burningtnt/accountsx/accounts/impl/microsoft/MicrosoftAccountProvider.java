@@ -1,64 +1,113 @@
 package net.burningtnt.accountsx.accounts.impl.microsoft;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.burningtnt.accountsx.accounts.AccountProvider;
-import net.burningtnt.accountsx.accounts.api.Memory;
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.Toast;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.burningtnt.accountsx.utils.IOUtils;
 import org.apache.http.client.methods.RequestBuilder;
-import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.io.IOException;
-import java.util.function.Supplier;
+import java.util.concurrent.CancellationException;
 
 public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccount> {
-    @Override
-    @Nullable
-    public <S extends UIScreen> S configure(Supplier<S> screenSupplier) {
-        return null;
-    }
+    private static final String SCOPE = "XboxLive.signin offline_access";
 
-    @Override
-    public void validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
-        throw new AssertionError("Should NOT be here.");
-    }
+    private static final String CLIENT_ID = "6a3728d6-27a3-4180-99bb-479895b8f88e";
 
-    @Override
-    public MicrosoftAccount login(Memory memory) throws IOException {
-        String[] code = new String[1];
-        IOUtils.openBrowser("Login your Microsoft Account", "https://login.live.com/oauth20_authorize.srf?client_id=00000000402b5328&response_type=code&scope=service%3A%3Auser.auth.xboxlive.com%3A%3AMBI_SSL&redirect_uri=https%3A%2F%2Flogin.live.com%2Foauth20_desktop.srf&prompt=login", url -> {
-            for (String pair : url.split("\\?", 3)[1].split("&")) {
-                int index = pair.indexOf("=");
-                if (index < 0) {
-                    continue;
-                }
+    private static final String DEVICE_CODE_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode";
 
-                if (pair.regionMatches(0, "code", 0, 4)) {
-                    code[0] = pair.substring(5);
-                    return true;
-                }
+    private static final String TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
+
+    public MicrosoftAccountProvider() {
+        if (System.getProperty("swing.defaultlaf") == null) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Throwable ignored) {
             }
-            return false;
-        });
-        if (code[0] == null) {
-            throw new IllegalArgumentException("Fail to get code");
         }
+    }
+
+    @Override
+    public void configure(UIScreen screen) {
+        screen.setTitle("as.account.objects.external");
+    }
+
+    @Override
+    public int validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
+        return STATE_HANDLE;
+    }
+
+    @Override
+    public MicrosoftAccount login(Memory memory) throws IOException, CancellationException {
+        if (memory.isScreenClosed()) {
+            throw new CancellationException("Screen has been closed.");
+        }
+
+        Toast.show(Toast.Type.TUTORIAL_HINT, "as.account.objects.oauth2.code.generating", null);
+
+        JsonObject device = IOUtils.postRequest(RequestBuilder.post(DEVICE_CODE_URL)
+                .addParameter("client_id", CLIENT_ID)
+                .addParameter("scope", SCOPE)
+                .build());
+
+        if (memory.isScreenClosed()) {
+            throw new CancellationException("Screen has been closed.");
+        }
+
+        Toast.copy(device.get("user_code").getAsString());
+
+        IOUtils.openBrowser(device.get("verification_uri").getAsString());
 
         String microsoftAccessToken, microsoftRefreshToken;
 
-        {
-            JsonObject jo = IOUtils.postRequest(RequestBuilder.post("https://login.live.com/oauth20_token.srf")
-                    .addParameter("client_id", "00000000402b5328")
-                    .addParameter("code", code[0])
-                    .addParameter("grant_type", "authorization_code")
-                    .addParameter("redirect_uri", "https://login.live.com/oauth20_desktop.srf")
-                    .addParameter("scope", "service::user.auth.xboxlive.com::MBI_SSL")
-                    .build()
-            );
+        for (int interval = device.get("interval").getAsInt(); ; ) {
+            try {
+                Thread.sleep(Math.max(interval, 1));
+            } catch (InterruptedException e) {
+                throw new IOException("Interrupted.", e);
+            }
 
-            microsoftAccessToken = jo.get("access_token").getAsString();
-            microsoftRefreshToken = jo.get("refresh_token").getAsString();
+            if (memory.isScreenClosed()) {
+                throw new CancellationException("Screen has been closed.");
+            }
+            Toast.show(Toast.Type.TUTORIAL_HINT, "as.account.objects.oauth2.code.title", "as.account.objects.oauth2.code.desc", device.get("user_code").getAsString());
+
+            JsonObject token;
+            token = IOUtils.postRequest(RequestBuilder.post(TOKEN_URL)
+                    .addParameter("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+                    .addParameter("code", device.get("device_code").getAsString())
+                    .addParameter("client_id", CLIENT_ID)
+                    .build(), true);
+
+            JsonElement err = token.get("error");
+            if (err == null) {
+                microsoftAccessToken = token.get("access_token").getAsString();
+                microsoftRefreshToken = token.get("refresh_token").getAsString();
+
+                break;
+            }
+
+            String error = err.getAsString();
+
+            if ("authorization_pending".equals(error)) {
+                continue;
+            }
+
+            if ("expired_token".equals(error)) {
+                throw new IOException("No character detected.");
+            }
+
+            if ("slow_down".equals(error)) {
+                interval += 5;
+                continue;
+            }
+
+            throw new IOException("Unknown error: " + error);
         }
 
         String xblToken, userHash;
@@ -66,7 +115,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             JsonObject properties = new JsonObject();
             properties.addProperty("AuthMethod", "RPS");
             properties.addProperty("SiteName", "user.auth.xboxlive.com");
-            properties.addProperty("RpsTicket", microsoftAccessToken);
+            properties.addProperty("RpsTicket", "d=" + microsoftAccessToken);
 
             JsonObject root = new JsonObject();
             root.add("Properties", properties);
@@ -122,12 +171,25 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
 
     @Override
     public void refresh(MicrosoftAccount account) throws IOException {
+        {
+            JsonObject token = IOUtils.postRequest(RequestBuilder.post(TOKEN_URL)
+                    .addParameter("client_id", CLIENT_ID)
+                    .addParameter("refresh_token", account.getMicrosoftAccountRefreshToken())
+                    .addParameter("grant_type", "refresh_token")
+                    .build());
+
+            account.setMicrosoftAccountToken(
+                    token.get("access_token").getAsString(),
+                    token.get("refresh_token").getAsString()
+            );
+        }
+
         String xblToken, userHash;
         {
             JsonObject properties = new JsonObject();
             properties.addProperty("AuthMethod", "RPS");
             properties.addProperty("SiteName", "user.auth.xboxlive.com");
-            properties.addProperty("RpsTicket", account.getMicrosoftAccountAccessToken());
+            properties.addProperty("RpsTicket", "d=" + account.getMicrosoftAccountAccessToken());
 
             JsonObject root = new JsonObject();
             root.add("Properties", properties);

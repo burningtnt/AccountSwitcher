@@ -1,4 +1,4 @@
-package net.burningtnt.accountsx.accounts.api;
+package net.burningtnt.accountsx.accounts.gui;
 
 /**
  * ScreenUI is an adapter between Minecraft's changing screen API and static codes.

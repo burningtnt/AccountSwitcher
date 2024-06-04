@@ -7,6 +7,8 @@ import net.burningtnt.accountsx.accounts.impl.env.EnvironmentAccount;
 import net.burningtnt.accountsx.mixins.MinecraftClientAccessor;
 import net.burningtnt.accountsx.mixins.PlayerSkinProviderAccessor;
 import net.burningtnt.accountsx.utils.I18NHelper;
+import net.burningtnt.accountsx.utils.threading.ThreadState;
+import net.burningtnt.accountsx.utils.threading.Threading;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.SocialInteractionsManager;
 import net.minecraft.client.texture.PlayerSkinProvider;
@@ -37,11 +39,11 @@ public final class AccountManager {
         accounts.add(defaultAccount);
         current = defaultAccount;
 
-        accounts.addAll(ConfigProcessor.load());
+        accounts.addAll(ConfigHandle.load());
 
         for (BaseAccount account : accounts) {
             if (account.getAccountState() != AccountState.AUTHORIZED) {
-                AccountTaskExecutor.submit(() -> {
+                AccountWorker.submit(() -> {
                     account.setProfileState(AccountState.AUTHORIZING);
 
                     try {
@@ -54,32 +56,38 @@ public final class AccountManager {
         }
     }
 
+    @ThreadState("Minecraft Client Thread")
     public static void dropAccount(BaseAccount account) {
-        checkThread();
+        Threading.checkMinecraftClientThread();
 
         if (account.getAccountType() == AccountType.ENV_DEFAULT) {
             return;
         }
 
         accounts.remove(account);
+        AccountWorker.submit(ConfigHandle::write);
     }
 
+    @ThreadState("Minecraft Client Thread")
     public static void addAccount(BaseAccount account) {
-        checkThread();
+        Threading.checkMinecraftClientThread();
 
         accounts.add(account);
-        AccountTaskExecutor.submit(ConfigProcessor::write);
+        AccountWorker.submit(ConfigHandle::write);
     }
 
+    @ThreadState("Minecraft Client Thread")
     public static void moveAccount(BaseAccount account, int index) {
-        checkThread();
+        Threading.checkMinecraftClientThread();
 
         accounts.remove(account);
         accounts.add(index, account);
+        AccountWorker.submit(ConfigHandle::write);
     }
 
+    @ThreadState("Minecraft Client Thread")
     public static <T extends BaseAccount> void switchAccount(T account, AccountSession service) {
-        checkThread();
+        Threading.checkMinecraftClientThread();
 
         if (account.getAccountState() != AccountState.AUTHORIZED) {
             throw new IllegalStateException("Account is not authorized.");
@@ -103,12 +111,6 @@ public final class AccountManager {
     }
 
     public static Text getCurrentAccountInfoText() {
-        return I18NHelper.translateUsingAccount(current);
-    }
-
-    private static void checkThread() {
-        if (!MinecraftClient.getInstance().isOnThread()) {
-            throw new IllegalStateException("Should in Minecraft Client Thread.");
-        }
+        return I18NHelper.translate(current);
     }
 }

@@ -7,24 +7,22 @@ import net.burningtnt.accountsx.AccountsX;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.BaseAccount;
-import net.burningtnt.accountsx.accounts.api.Memory;
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.util.Session;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public final class EnvironmentAccountProvider implements AccountProvider<EnvironmentAccount> {
     @Override
-    public <S extends UIScreen> @Nullable S configure(Supplier<S> screenSupplier) {
+    public void configure(UIScreen screen) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void validate(UIScreen screen, Memory memory) {
+    public int validate(UIScreen screen, Memory memory) {
         throw new UnsupportedOperationException();
     }
 
@@ -48,7 +46,7 @@ public final class EnvironmentAccountProvider implements AccountProvider<Environ
             BaseAccount.AccountStorage s = account.getAccountStorage();
 
             return new AccountSession(
-                    new Session(s.playerName, s.playerUUID, s.accessToken, Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
                     sessionService, UserApiService.OFFLINE
             );
         }

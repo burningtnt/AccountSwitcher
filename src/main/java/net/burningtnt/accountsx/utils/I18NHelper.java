@@ -15,14 +15,14 @@ public final class I18NHelper {
         return Text.translatable("as.account.type." + type.name().toLowerCase(Locale.ROOT) + ".name");
     }
 
-    public static Text translateAccountState(AccountState state) {
+    public static Text translate(AccountState state) {
         return Text.translatable("as.account.state." + state.name().toLowerCase(Locale.ROOT) + ".name");
     }
 
-    public static Text translateUsingAccount(BaseAccount account) {
+    public static Text translate(BaseAccount account) {
         return Text.translatable(
                 "as.account.type." + account.getAccountType().name().toLowerCase(Locale.ROOT) + ".using",
-                account.getPlayerName()
+                account.getAccountStorage().getPlayerName()
         );
     }
 }

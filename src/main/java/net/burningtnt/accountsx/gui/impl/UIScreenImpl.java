@@ -1,8 +1,15 @@
 package net.burningtnt.accountsx.gui.impl;
 
-import net.burningtnt.accountsx.accounts.api.UIScreen;
+import net.burningtnt.accountsx.AccountsX;
+import net.burningtnt.accountsx.accounts.AccountProvider;
+import net.burningtnt.accountsx.accounts.BaseAccount;
+import net.burningtnt.accountsx.accounts.gui.Memory;
+import net.burningtnt.accountsx.accounts.gui.UIScreen;
+import net.burningtnt.accountsx.config.AccountManager;
+import net.burningtnt.accountsx.config.AccountWorker;
 import net.burningtnt.accountsx.gui.AccountScreen;
 import net.burningtnt.accountsx.gui.ButtonWidget;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Drawable;
@@ -13,9 +20,15 @@ import net.minecraft.text.Text;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 public final class UIScreenImpl implements UIScreen {
+    public static void login(MinecraftClient client, AccountScreen accountScreen, AccountProvider<?> provider) {
+        UIScreenImpl screen = new UIScreenImpl();
+        provider.configure(screen);
+
+        client.setScreen(screen.bind(accountScreen, provider));
+    }
+
     private static final class ValuedWidget<T extends Drawable> {
         private final String description;
 
@@ -56,64 +69,129 @@ public final class UIScreenImpl implements UIScreen {
         return this.inputs.get(guid).widget.getText();
     }
 
-    public Screen bind(AccountScreen parent, Consumer<Screen> callback) {
+    public Screen bind(AccountScreen parent, AccountProvider<?> provider) {
         readonly = true;
 
-        return new Screen(Text.translatable(this.title)) {
-            @Override
-            public void close() {
-                assert this.client != null;
+        return new LoginScreen(Text.translatable(this.title), parent, provider);
+    }
 
-                this.client.setScreen(parent);
+    private final class LoginScreen extends Screen {
+        private final AccountScreen parent;
+
+        private final AccountProvider<?> provider;
+
+        public LoginScreen(Text title, AccountScreen parent, AccountProvider<?> provider) {
+            super(title);
+            this.parent = parent;
+            this.provider = provider;
+        }
+
+        @Override
+        public void close() {
+            assert this.client != null;
+
+            this.client.setScreen(parent);
+        }
+
+        @Override
+        protected void init() {
+            assert this.client != null;
+
+            super.init();
+
+            int widgetsTop = this.height / 2 - (UIScreenImpl.this.inputs.size() + 1) * 25 / 2;
+            int widgetsLeft = this.width / 2 - 50;
+
+            for (ValuedWidget<TextFieldWidget> widget : UIScreenImpl.this.inputs.values()) {
+                widget.widget = this.addField(
+                        new TextFieldWidget(this.client.textRenderer, widgetsLeft, widgetsTop, 200, 20, Text.empty())
+                );
+
+                widgetsTop += 25;
             }
 
-            @Override
-            protected void init() {
-                assert this.client != null;
+            this.addField(new ButtonWidget(widgetsLeft, widgetsTop, 100, 20, Text.translatable("as.general.login"), widget -> {
+                Memory memory = new DefaultMemory(this);
 
-                super.init();
-
-                int widgetsTop = this.height / 2 - (UIScreenImpl.this.inputs.size() + 1) * 25 / 2;
-                int widgetsLeft = this.width / 2 - 50;
-
-                for (ValuedWidget<TextFieldWidget> widget : UIScreenImpl.this.inputs.values()) {
-                    widget.widget = this.addField(
-                            new TextFieldWidget(this.client.textRenderer, widgetsLeft, widgetsTop, 200, 20, Text.empty())
-                    );
-
-                    widgetsTop += 25;
+                int state;
+                try {
+                    state = this.provider.validate(UIScreenImpl.this, memory);
+                } catch (IllegalArgumentException e) {
+                    AccountsX.LOGGER.warn("Invalid account argument.", e);
+                    return;
                 }
 
-                Screen that = this;
-                this.addField(new ButtonWidget(widgetsLeft, widgetsTop, 90, 20, Text.translatable("as.general.login"), widget -> callback.accept(that)));
-            }
-
-            @Override
-            public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-                assert this.client != null;
-
-                super.renderBackground(context);
-                super.render(context, mouseX, mouseY, delta);
-
-                int textTop = this.height / 2 - (UIScreenImpl.this.inputs.size() + 1) * 25 / 2 + 5;
-                int textLeft = this.width / 2 - 170;
-
-                for (ValuedWidget<TextFieldWidget> widget : UIScreenImpl.this.inputs.values()) {
-                    client.textRenderer.draw(
-                            Text.translatable(widget.description), textLeft, textTop, 0xFFFFFF, true,
-                            context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL,
-                            0, 0xF000F0
-                    );
-
-                    textTop += 25;
+                switch (state) {
+                    case AccountProvider.STATE_IMMEDIATE_CLOSE -> this.close();
+                    case AccountProvider.STATE_HANDLE -> {
+                    }
+                    default -> throw new IllegalArgumentException("Unknown state: " + state);
                 }
-            }
 
-            public <T extends ClickableWidget> T addField(T drawable) {
-                this.addDrawable(drawable);
-                this.addSelectableChild(drawable);
-                return drawable;
+                AccountWorker.submit(() -> {
+                    BaseAccount account;
+                    try {
+                        account = this.provider.login(memory);
+                    } catch (Throwable t) {
+                        this.client.send(() -> {
+                            if (this.client.currentScreen == this) {
+                                this.close();
+                            }
+                        });
+
+                        throw t;
+                    }
+
+                    this.client.send(() -> {
+                        if (this.client.currentScreen == this) {
+                            this.close();
+                        }
+
+                        AccountManager.addAccount(account);
+
+                        this.parent.syncAccounts();
+                    });
+                });
+            }));
+
+            this.addField(new ButtonWidget(widgetsLeft, widgetsTop + 25, 100, 20, Text.translatable("as.general.action.close"), widget -> {
+                this.close();
+            }));
+        }
+
+        @Override
+        public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+            assert this.client != null;
+
+            super.renderBackground(context);
+            super.render(context, mouseX, mouseY, delta);
+
+            int textTop = this.height / 2 - (UIScreenImpl.this.inputs.size() + 1) * 25 / 2 + 5;
+            int textLeft = this.width / 2 - 170;
+
+            client.textRenderer.draw(
+                    this.title,
+                    (float) this.width / 2 - (float) client.textRenderer.getWidth(this.title) / 2, textTop - 40,
+                    0xFFFFFF, true,
+                    context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL,
+                    0, 0xF000F0
+            );
+
+            for (ValuedWidget<TextFieldWidget> widget : UIScreenImpl.this.inputs.values()) {
+                client.textRenderer.draw(
+                        Text.translatable(widget.description), textLeft, textTop, 0xFFFFFF, true,
+                        context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL,
+                        0, 0xF000F0
+                );
+
+                textTop += 25;
             }
-        };
+        }
+
+        public <T extends ClickableWidget> T addField(T drawable) {
+            this.addDrawable(drawable);
+            this.addSelectableChild(drawable);
+            return drawable;
+        }
     }
 }

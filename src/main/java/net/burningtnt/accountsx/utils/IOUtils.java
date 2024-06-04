@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.minecraft.util.Util;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -11,49 +12,28 @@ import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.LocationAdapter;
-import org.eclipse.swt.browser.LocationEvent;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class IOUtils {
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static void openBrowser(String title, String url, Callback<String> callback) {
-        Display display = new Display();
-        Shell shell = new Shell(display);
-        shell.setText(title);
-        shell.setSize(800, 600);
-
-        final Browser browser = new Browser(shell, SWT.FILL);
-        browser.setBounds(5, 5, 780, 560);
-        browser.setUrl(url);
-        browser.addLocationListener(new LocationAdapter() {
-            @Override
-            public void changed(LocationEvent event) {
-                if (!url.equals(event.location)) {
-                    if (callback.execute(event.location))
-                        shell.close();
-                }
-            }
-        });
-        shell.open();
-        while (!shell.isDisposed())
-            if (!display.readAndDispatch())
-                display.sleep();
-        display.dispose();
+    public static void openBrowser(String url) {
+        Util.getOperatingSystem().open(url);
     }
 
     public static JsonObject postRequest(HttpUriRequest request) throws IOException {
+        return postRequest(request, false);
+    }
+
+    public static JsonObject postRequest(HttpUriRequest request, boolean ignoreHttpStatus) throws IOException {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            try (Reader reader = IOUtils.readResponse(httpClient.execute(request))) {
+            try (Reader reader = IOUtils.readResponse(httpClient.execute(request), ignoreHttpStatus)) {
                 return IOUtils.GSON.fromJson(reader, JsonObject.class);
             }
         }
@@ -66,7 +46,14 @@ public class IOUtils {
                 .build());
     }
 
-    public static Reader readResponse(HttpResponse response) throws IOException {
+    public static Reader readResponse(HttpResponse response, boolean ignoreHttpStatus) throws IOException {
+        if (!ignoreHttpStatus) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode / 100 != 2) {
+                throw new IOException("HTTP " + statusCode + ": " + response.getStatusLine().getReasonPhrase());
+            }
+        }
+
         Header encoding = response.getEntity().getContentEncoding();
         if (encoding == null) {
             return new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -75,7 +62,25 @@ public class IOUtils {
         return new InputStreamReader(response.getEntity().getContent(), encoding.getValue());
     }
 
-    public interface Callback<T> {
-        boolean execute(T data);
+    public static String withQuery(String baseUrl, Map<String, String> params) {
+        StringBuilder sb = new StringBuilder(baseUrl);
+        boolean first = true;
+
+        for (Map.Entry<String, String> param : params.entrySet()) {
+            if (param.getValue() == null)
+                continue;
+            if (first) {
+                if (!baseUrl.isEmpty()) {
+                    sb.append('?');
+                }
+                first = false;
+            } else {
+                sb.append('&');
+            }
+            sb.append(URLEncoder.encode(param.getKey(), StandardCharsets.UTF_8));
+            sb.append('=');
+            sb.append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
+        }
+        return sb.toString();
     }
 }
