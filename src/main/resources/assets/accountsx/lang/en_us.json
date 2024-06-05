@@ -1,0 +1,36 @@
+{
+  "as.general.login": "Login",
+  "as.general.action.close": "Back",
+  "as.general.action.ok": "OK",
+
+  "as.account.objects.player_name": "Player ID",
+  "as.account.objects.player_uuid": "Player UUID",
+  "as.account.objects.server_domain": "Yggdrasil API URL (Root Domain Only)",
+  "as.account.objects.user_name": "User ID",
+  "as.account.objects.user_password": "User Password",
+  "as.account.objects.external": "Please follow the instructions in the external application that pops up",
+  "as.account.objects.oauth2.code.generating": "Generating OAuth2 Code",
+  "as.account.objects.oauth2.code.title": "OAuth2 Code Generated",
+  "as.account.objects.oauth2.code.desc": "Code (copied to clipboard): %s",
+
+  "as.account.action.add_account": "Add Account",
+  "as.account.action.operating": "Operating...",
+  "as.account.action.fail.title": "Account Operation Failed",
+  "as.account.action.fail.description": "Please check the logs or seek help",
+
+  "as.account.state.unauthorized.name": "Not Logged In",
+  "as.account.state.authorizing.name": "Logging In",
+  "as.account.state.refreshing.name": "Refreshing",
+  "as.account.state.authorized.name": "Available",
+
+  "as.account.type.env_default.name": "Game Default Account",
+  "as.account.type.env_default.using": "Using Game Default Account: %s",
+  "as.account.type.offline.name": "Offline Account",
+  "as.account.type.offline.using": "Using Offline Account: %s",
+  "as.account.type.microsoft.name": "Microsoft Account",
+  "as.account.type.microsoft.using": "Using Microsoft Account: %s",
+  "as.account.type.injector.name": "Yggdrasil API Authentication",
+  "as.account.type.injector.using": "Using Yggdrasil API Authentication Account: %s",
+  "as.account.type.custom.name": "Custom Account",
+  "as.account.type.custom.using": "Using Custom Account: %s"
+}
