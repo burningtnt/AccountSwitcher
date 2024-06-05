@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.burningtnt.accountsx.accounts.AccountProvider;
+import net.burningtnt.accountsx.accounts.AccountUUID;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.Toast;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
@@ -166,7 +167,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             playerUUID = json.get("id").getAsString();
         }
 
-        return new MicrosoftAccount(accessToken, playerName, playerUUID, microsoftAccessToken, microsoftRefreshToken);
+        return new MicrosoftAccount(accessToken, playerName, AccountUUID.parse(playerUUID), microsoftAccessToken, microsoftRefreshToken);
     }
 
     @Override
@@ -240,6 +241,6 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             playerUUID = json.get("id").getAsString();
         }
 
-        account.setProfile(accessToken, playerName, playerUUID);
+        account.setProfile(accessToken, playerName, AccountUUID.parse(playerUUID));
     }
 }

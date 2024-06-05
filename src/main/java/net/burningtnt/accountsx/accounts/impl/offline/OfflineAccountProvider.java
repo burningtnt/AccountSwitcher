@@ -3,15 +3,14 @@ package net.burningtnt.accountsx.accounts.impl.offline;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.AccountProvider;
+import net.burningtnt.accountsx.accounts.AccountSession;
+import net.burningtnt.accountsx.accounts.AccountUUID;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Session;
 
-import java.util.Optional;
 import java.util.UUID;
 
 public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
@@ -27,16 +26,15 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
 
     @Override
     public int validate(UIScreen screen, Memory memory) throws IllegalArgumentException {
-        memory.set(GUID_PLAYER_NAME, screen.getTextInput(GUID_PLAYER_NAME));
+        String playerName = screen.getTextInput(GUID_PLAYER_NAME);
+        memory.set(GUID_PLAYER_NAME, playerName);
 
         String playerUUIDString = screen.getTextInput(GUID_PLAYER_UUID);
         if (playerUUIDString.isEmpty()) {
-            // TODO: Use specific way to generate UUID.
-            memory.set(GUID_PLAYER_UUID, UUID.randomUUID().toString().replace("-", ""));
+            memory.set(GUID_PLAYER_UUID, AccountUUID.generate(playerName));
         } else {
             try {
-                // TODO: Parse UUID
-                memory.set(GUID_PLAYER_UUID, UUID.fromString(playerUUIDString).toString().replace("-", ""));
+                memory.set(GUID_PLAYER_UUID, AccountUUID.parse(playerUUIDString));
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Cannot parse current UUID: " + playerUUIDString);
             }
@@ -50,7 +48,7 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
         return new OfflineAccount(
                 UUID.randomUUID().toString().replace("-", ""),
                 memory.get(GUID_PLAYER_NAME, String.class),
-                memory.get(GUID_PLAYER_UUID, String.class)
+                memory.get(GUID_PLAYER_UUID, UUID.class)
         );
     }
 
@@ -70,9 +68,6 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
         MinecraftSessionService sessionService = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy()).createMinecraftSessionService();
         BaseAccount.AccountStorage s = account.getAccountStorage();
 
-        return new AccountSession(
-                new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
-                sessionService, UserApiService.OFFLINE
-        );
+        return new AccountSession(AccountProvider.createSession(s), sessionService, UserApiService.OFFLINE);
     }
 }

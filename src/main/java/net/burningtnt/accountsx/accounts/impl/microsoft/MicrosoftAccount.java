@@ -3,12 +3,14 @@ package net.burningtnt.accountsx.accounts.impl.microsoft;
 import net.burningtnt.accountsx.accounts.AccountType;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 
-public final class  MicrosoftAccount extends BaseAccount {
+import java.util.UUID;
+
+public final class MicrosoftAccount extends BaseAccount {
     private String microsoftAccountAccessToken;
 
     private String microsoftAccountRefreshToken;
 
-    public MicrosoftAccount(String accessToken, String playerName, String playerUUID, String microsoftAccountAccessToken, String microsoftAccountRefreshToken) {
+    public MicrosoftAccount(String accessToken, String playerName, UUID playerUUID, String microsoftAccountAccessToken, String microsoftAccountRefreshToken) {
         super(accessToken, playerName, playerUUID, AccountType.MICROSOFT);
         this.microsoftAccountAccessToken = microsoftAccountAccessToken;
         this.microsoftAccountRefreshToken = microsoftAccountRefreshToken;

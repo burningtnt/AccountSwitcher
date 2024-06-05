@@ -3,7 +3,7 @@ package net.burningtnt.accountsx.config;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import net.burningtnt.accountsx.accounts.*;
-import net.burningtnt.accountsx.accounts.impl.env.EnvironmentAccount;
+import net.burningtnt.accountsx.accounts.impl.env.EnvironmentAccountProvider;
 import net.burningtnt.accountsx.mixins.MinecraftClientAccessor;
 import net.burningtnt.accountsx.mixins.PlayerSkinProviderAccessor;
 import net.burningtnt.accountsx.utils.I18NHelper;
@@ -14,6 +14,7 @@ import net.minecraft.client.network.SocialInteractionsManager;
 import net.minecraft.client.texture.PlayerSkinProvider;
 import net.minecraft.text.Text;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,7 +36,7 @@ public final class AccountManager {
     }
 
     public static void initialize() {
-        BaseAccount defaultAccount = EnvironmentAccount.fromSession(MinecraftClient.getInstance().getSession());
+        BaseAccount defaultAccount = EnvironmentAccountProvider.fromSession(MinecraftClient.getInstance().getSession());
         accounts.add(defaultAccount);
         current = defaultAccount;
 

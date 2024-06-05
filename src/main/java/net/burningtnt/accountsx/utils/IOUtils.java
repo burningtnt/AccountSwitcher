@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.burningtnt.accountsx.accounts.AccountUUID;
 import net.minecraft.util.Util;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -19,9 +20,13 @@ import java.io.Reader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.UUID;
 
 public class IOUtils {
-    public static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    public static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(UUID.class, new AccountUUID.UUIDTypeAdapter())
+            .setPrettyPrinting()
+            .create();
 
     public static void openBrowser(String url) {
         Util.getOperatingSystem().open(url);

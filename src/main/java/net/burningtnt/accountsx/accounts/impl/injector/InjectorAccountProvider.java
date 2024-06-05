@@ -6,6 +6,7 @@ import com.mojang.authlib.minecraft.UserApiService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountSession;
+import net.burningtnt.accountsx.accounts.AccountUUID;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
@@ -64,7 +65,7 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
 
 
         return new InjectorAccount(
-                accessToken, playerName, playerUUID,
+                accessToken, playerName, AccountUUID.parse(playerUUID),
                 memory.get(GUID_SERVER_DOMAIN, String.class), memory.get(GUID_USER_NAME, String.class), memory.get(GUID_USER_UUID, String.class)
         );
     }
@@ -91,8 +92,7 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
         String playerUUID = json.get("selectedProfile").getAsJsonObject().get("id").getAsString();
         String playerName = json.get("selectedProfile").getAsJsonObject().get("name").getAsString();
 
-
-        account.setProfile(accessToken, playerName, playerUUID);
+        account.setProfile(accessToken, playerName, AccountUUID.parse(playerUUID));
     }
 
     @Override
@@ -104,15 +104,9 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
         LocalYggdrasilMinecraftSessionService sessionService = new LocalYggdrasilMinecraftSessionService(authenticationService, env);
 
         try {
-            return new AccountSession(
-                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
-                    sessionService, authenticationService.createUserApiService(s.getAccessToken())
-            );
+            return new AccountSession(AccountProvider.createSession(s), sessionService, authenticationService.createUserApiService(s.getAccessToken()));
         } catch (AuthenticationException e) {
-            return new AccountSession(
-                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
-                    sessionService, UserApiService.OFFLINE
-            );
+            return new AccountSession(AccountProvider.createSession(s), sessionService, UserApiService.OFFLINE);
         }
     }
 }

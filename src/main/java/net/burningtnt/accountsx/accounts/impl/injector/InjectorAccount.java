@@ -3,6 +3,8 @@ package net.burningtnt.accountsx.accounts.impl.injector;
 import net.burningtnt.accountsx.accounts.AccountType;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 
+import java.util.UUID;
+
 public class InjectorAccount extends BaseAccount {
     private final String server;
 
@@ -10,7 +12,7 @@ public class InjectorAccount extends BaseAccount {
 
     private final String password;
 
-    public InjectorAccount(String accessToken, String playerName, String playerUUID, String server, String userName, String password) {
+    public InjectorAccount(String accessToken, String playerName, UUID playerUUID, String server, String userName, String password) {
         super(accessToken, playerName, playerUUID, AccountType.INJECTOR);
         this.server = server;
         this.userName = userName;

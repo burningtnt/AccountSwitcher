@@ -31,12 +31,16 @@ public interface AccountProvider<T extends BaseAccount> {
 
         try {
             return new AccountSession(
-                    new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG),
+                    createSession(s),
                     sessionService, service.createUserApiService(s.getAccessToken())
             );
         } catch (AuthenticationException e) {
             throw new IOException("Failed to create session service.", e);
         }
+    }
+
+    static Session createSession(BaseAccount.AccountStorage s) {
+        return new Session(s.getPlayerName(), AccountUUID.toMinecraftStyleString(s.getPlayerUUID()), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG);
     }
 
     @SuppressWarnings("unchecked")

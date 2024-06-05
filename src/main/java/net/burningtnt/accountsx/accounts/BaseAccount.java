@@ -1,6 +1,9 @@
 package net.burningtnt.accountsx.accounts;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
@@ -11,6 +14,7 @@ import net.burningtnt.accountsx.utils.threading.Threading;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @JsonAdapter(BaseAccount.Adapter.class)
@@ -51,7 +55,7 @@ public abstract class BaseAccount {
 
         private final String playerName;
 
-        private final String playerUUID;
+        private final UUID playerUUID;
 
         private final transient AccountState state;
 
@@ -62,7 +66,7 @@ public abstract class BaseAccount {
             this.state = AccountState.UNAUTHORIZED;
         }
 
-        private AccountStorage(String accessToken, String playerName, String playerUUID, AccountState state) {
+        private AccountStorage(String accessToken, String playerName, UUID playerUUID, AccountState state) {
             this.accessToken = accessToken;
             this.playerName = playerName;
             this.playerUUID = playerUUID;
@@ -77,7 +81,7 @@ public abstract class BaseAccount {
             return playerName;
         }
 
-        public String getPlayerUUID() {
+        public UUID getPlayerUUID() {
             return playerUUID;
         }
 
@@ -90,7 +94,7 @@ public abstract class BaseAccount {
 
     private final AccountType type;
 
-    protected BaseAccount(String accessToken, String playerName, String playerUUID, AccountType type) {
+    protected BaseAccount(String accessToken, String playerName, UUID playerUUID, AccountType type) {
         this.storage = new AccountStorage(accessToken, playerName, playerUUID, AccountState.AUTHORIZED);
         this.type = type;
     }
@@ -108,7 +112,7 @@ public abstract class BaseAccount {
     }
 
     @ThreadState(ThreadState.ACCOUNT_WORKER)
-    public final void setProfile(String accessToken, String playerName, String playerUUID) {
+    public final void setProfile(String accessToken, String playerName, UUID playerUUID) {
         Threading.checkAccountWorkerThread();
 
         this.storage = new AccountStorage(accessToken, playerName, playerUUID, AccountState.AUTHORIZED);
