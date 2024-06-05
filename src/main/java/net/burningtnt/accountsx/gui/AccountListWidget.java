@@ -66,7 +66,7 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
     }
 
     @Override
-    protected int getScrollbarPositionX() {
+    protected int getScrollbarX() {
         return this.getRight();
     }
 

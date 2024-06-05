@@ -30,7 +30,5 @@
   "as.account.type.microsoft.name": "微软账号",
   "as.account.type.microsoft.using": "正在使用微软账号：%s",
   "as.account.type.injector.name": "外置登录账号",
-  "as.account.type.injector.using": "正在使用外置登录账号：%s",
-  "as.account.type.custom.name": "自定义账号",
-  "as.account.type.custom.using": "正在使用自定义账号：%s"
+  "as.account.type.injector.using": "正在使用外置登录账号：%s"
 }

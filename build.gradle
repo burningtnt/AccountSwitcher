@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '0.12-SNAPSHOT'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -23,7 +23,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modRuntimeOnly "net.fabricmc.fabric-api:fabric-resource-loader-v0:0.11.21+ee30b13a4f"
+    modRuntimeOnly "net.fabricmc.fabric-api:fabric-resource-loader-v0:1.1.0+c0e5481fb0"
     modRuntimeOnly "io.github.llamalad7:mixinextras-fabric:0.3.5"
 }
 
