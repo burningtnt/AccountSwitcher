@@ -1,11 +1,11 @@
 {
-  "as.general.login": "登录",
-  "as.general.action.close": "关闭",
+  "as.general.login": "登陆",
+  "as.general.action.close": "返回",
   "as.general.action.ok": "我明白了",
 
   "as.account.objects.player_name": "玩家 ID",
   "as.account.objects.player_uuid": "玩家 UUID",
-  "as.account.objects.server_domain": "认证服务器域名",
+  "as.account.objects.server_domain": "认证服务器（仅根域名）",
   "as.account.objects.user_name": "用户 ID",
   "as.account.objects.user_password": "用户密码",
   "as.account.objects.external": "请在弹出的外部应用程序中按照提示操作",
