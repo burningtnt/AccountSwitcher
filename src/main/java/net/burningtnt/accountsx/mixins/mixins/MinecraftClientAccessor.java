@@ -1,11 +1,11 @@
-package net.burningtnt.accountsx.mixins;
+package net.burningtnt.accountsx.mixins.mixins;
 
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.SocialInteractionsManager;
+import net.minecraft.client.session.Session;
 import net.minecraft.client.texture.PlayerSkinProvider;
-import net.minecraft.client.util.Session;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;

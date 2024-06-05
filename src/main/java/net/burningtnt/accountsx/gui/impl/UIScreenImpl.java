@@ -163,7 +163,7 @@ public final class UIScreenImpl implements UIScreen {
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
             assert this.client != null;
 
-            super.renderBackground(context);
+            super.renderBackground(context, mouseX, mouseY, delta);
             super.render(context, mouseX, mouseY, delta);
 
             int textTop = this.height / 2 - (UIScreenImpl.this.inputs.size() + 1) * 25 / 2 + 5;

@@ -1,8 +1,7 @@
 package net.burningtnt.accountsx.accounts.impl.injector;
 
 import com.google.gson.JsonObject;
-import com.mojang.authlib.exceptions.AuthenticationException;
-import com.mojang.authlib.minecraft.UserApiService;
+import com.mojang.authlib.Environment;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountSession;
@@ -10,14 +9,11 @@ import net.burningtnt.accountsx.accounts.AccountUUID;
 import net.burningtnt.accountsx.accounts.BaseAccount;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
-import net.burningtnt.accountsx.accounts.impl.injector.service.InjectorEnvironment;
 import net.burningtnt.accountsx.accounts.impl.injector.service.LocalYggdrasilMinecraftSessionService;
 import net.burningtnt.accountsx.utils.IOUtils;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Session;
 
 import java.io.IOException;
-import java.util.Optional;
 
 public class InjectorAccountProvider implements AccountProvider<InjectorAccount> {
     private static final String GUID_SERVER_DOMAIN = "guid:as.login.injector.widgets.server_url";
@@ -97,16 +93,17 @@ public class InjectorAccountProvider implements AccountProvider<InjectorAccount>
 
     @Override
     public AccountSession createProfile(InjectorAccount account) {
-        InjectorEnvironment env = new InjectorEnvironment(account.getServer());
+        String url = account.getServer();
+        Environment env = new Environment(
+                "https://" + url + "/api/yggdrasil/sessionserver",
+                "https://" + url + "/api/yggdrasil/minecraftservices",
+                "Authlib-Injector"
+        );
 
         YggdrasilAuthenticationService authenticationService = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy(), env);
         BaseAccount.AccountStorage s = account.getAccountStorage();
         LocalYggdrasilMinecraftSessionService sessionService = new LocalYggdrasilMinecraftSessionService(authenticationService, env);
 
-        try {
-            return new AccountSession(AccountProvider.createSession(s), sessionService, authenticationService.createUserApiService(s.getAccessToken()));
-        } catch (AuthenticationException e) {
-            return new AccountSession(AccountProvider.createSession(s), sessionService, UserApiService.OFFLINE);
-        }
+        return new AccountSession(AccountProvider.createSession(s), sessionService, authenticationService.createUserApiService(s.getAccessToken()));
     }
 }

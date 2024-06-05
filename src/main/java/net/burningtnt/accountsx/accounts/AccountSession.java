@@ -2,7 +2,7 @@ package net.burningtnt.accountsx.accounts;
 
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
-import net.minecraft.client.util.Session;
+import net.minecraft.client.session.Session;
 
 public final class AccountSession {
     private final Session session;

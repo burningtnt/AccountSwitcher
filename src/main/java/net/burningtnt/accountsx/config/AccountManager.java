@@ -4,8 +4,8 @@ import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import net.burningtnt.accountsx.accounts.*;
 import net.burningtnt.accountsx.accounts.impl.env.EnvironmentAccountProvider;
-import net.burningtnt.accountsx.mixins.MinecraftClientAccessor;
 import net.burningtnt.accountsx.mixins.PlayerSkinProviderAccessor;
+import net.burningtnt.accountsx.mixins.mixins.MinecraftClientAccessor;
 import net.burningtnt.accountsx.utils.I18NHelper;
 import net.burningtnt.accountsx.utils.threading.ThreadState;
 import net.burningtnt.accountsx.utils.threading.Threading;
@@ -14,7 +14,6 @@ import net.minecraft.client.network.SocialInteractionsManager;
 import net.minecraft.client.texture.PlayerSkinProvider;
 import net.minecraft.text.Text;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -106,8 +105,9 @@ public final class AccountManager {
         ((MinecraftClientAccessor) client).setSocialInteractionManager(new SocialInteractionsManager(client, userAPIService));
         ((MinecraftClientAccessor) client).setSkinProvider(new PlayerSkinProvider(
                 client.getTextureManager(),
-                ((PlayerSkinProviderAccessor) client.getSkinProvider()).getSkinCacheDir(),
-                sessionService
+                ((PlayerSkinProviderAccessor) client.getSkinProvider()).accountx$getDirectory(),
+                sessionService,
+                ((PlayerSkinProviderAccessor) client.getSkinProvider()).accountx$getExecutor()
         ));
     }
 

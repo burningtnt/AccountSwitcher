@@ -11,14 +11,13 @@ import net.burningtnt.accountsx.accounts.BaseAccount;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Session;
-
+import net.minecraft.client.session.Session;
 import java.io.IOException;
 import java.util.Optional;
 
 public final class EnvironmentAccountProvider implements AccountProvider<EnvironmentAccount> {
     public static BaseAccount fromSession(Session session) {
-        return new EnvironmentAccount(session.getAccessToken(), session.getUsername(), AccountUUID.parse(session.getUuid()));
+        return new EnvironmentAccount(session.getAccessToken(), session.getUsername(), session.getUuidOrNull());
     }
 
     @Override

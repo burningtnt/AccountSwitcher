@@ -1,4 +1,4 @@
-package net.burningtnt.accountsx.mixins;
+package net.burningtnt.accountsx.mixins.mixins;
 
 import net.burningtnt.accountsx.AccountsX;
 import net.burningtnt.accountsx.config.AccountManager;
@@ -6,8 +6,7 @@ import net.burningtnt.accountsx.gui.AccountScreen;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.TexturedButtonWidget;
+import net.minecraft.client.gui.widget.TextIconButtonWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
@@ -23,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(TitleScreen.class)
 public class TitleScreenMixin extends Screen {
     @Unique
-    private static final Identifier SWITCH_ACCOUNT_ICON_TEXTURE = new Identifier(AccountsX.MOD_ID, "textures/gui/account.png");
+    private static final Identifier SWITCH_ACCOUNT_ICON_TEXTURE = new Identifier(AccountsX.MOD_ID, "icon/account");
 
     @Final
     @Shadow
@@ -40,10 +39,15 @@ public class TitleScreenMixin extends Screen {
     protected void init(CallbackInfo ci) {
         assert this.client != null;
         int j = this.height / 4 + 48;
-        this.addDrawableChild((ClickableWidget) new TexturedButtonWidget(
-                this.width / 2 + 104, j + 24 * 2, 20, 20, 0, 0, 20, SWITCH_ACCOUNT_ICON_TEXTURE, 32, 64,
-                (buttonWidget) -> this.client.setScreen(new AccountScreen(this)), Text.translatable("as.account.action.add_account")
-        ));
+
+        this.addDrawableChild(TextIconButtonWidget.builder(
+                        Text.translatable("as.account.action.add_account"),
+                        (button) -> this.client.setScreen(new AccountScreen(this)),
+                        true)
+                .dimension(20, 20)
+                .texture(SWITCH_ACCOUNT_ICON_TEXTURE, 20, 20)
+                .build()
+        ).setPosition(this.width / 2 + 104, j + 24 * 2);
     }
 
     @Inject(method = "render", at = @At("RETURN"))

@@ -1,12 +1,11 @@
 package net.burningtnt.accountsx.accounts;
 
-import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.gui.Memory;
 import net.burningtnt.accountsx.accounts.gui.UIScreen;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.Session;
+import net.minecraft.client.session.Session;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -29,18 +28,14 @@ public interface AccountProvider<T extends BaseAccount> {
         MinecraftSessionService sessionService = service.createMinecraftSessionService();
         BaseAccount.AccountStorage s = account.storage;
 
-        try {
-            return new AccountSession(
-                    createSession(s),
-                    sessionService, service.createUserApiService(s.getAccessToken())
-            );
-        } catch (AuthenticationException e) {
-            throw new IOException("Failed to create session service.", e);
-        }
+        return new AccountSession(
+                createSession(s),
+                sessionService, service.createUserApiService(s.getAccessToken())
+        );
     }
 
     static Session createSession(BaseAccount.AccountStorage s) {
-        return new Session(s.getPlayerName(), AccountUUID.toMinecraftStyleString(s.getPlayerUUID()), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG);
+        return new Session(s.getPlayerName(), s.getPlayerUUID(), s.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG);
     }
 
     @SuppressWarnings("unchecked")
