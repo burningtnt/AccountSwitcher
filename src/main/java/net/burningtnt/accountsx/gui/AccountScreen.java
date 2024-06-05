@@ -89,6 +89,7 @@ public class AccountScreen extends Screen {
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.renderBackground(context);
+        super.render(context, mouseX, mouseY, delta);
         this.accountListWidget.render(context, mouseX, mouseY, delta);
 
         context.drawCenteredTextWithShadow(this.textRenderer, AccountWorker.isRunning() ? WORKING : this.title, this.width / 2 + LAYOUT_ENTRY_X / 2, LAYOUT_VERTICAL_SPACING, 0xFFFFFF);
@@ -99,8 +100,6 @@ public class AccountScreen extends Screen {
                 LAYOUT_TOOL_BAR_TEXT_CENTER_X, LAYOUT_TOOL_BAR_ADD_ACCOUNT_Y,
                 0xFFFFFF
         );
-
-        super.render(context, mouseX, mouseY, delta);
     }
 
     public void addField(ClickableWidget drawable) {
