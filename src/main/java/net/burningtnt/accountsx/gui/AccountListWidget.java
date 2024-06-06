@@ -1,6 +1,5 @@
 package net.burningtnt.accountsx.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.burningtnt.accountsx.accounts.AccountProvider;
 import net.burningtnt.accountsx.accounts.AccountSession;
 import net.burningtnt.accountsx.accounts.AccountType;
@@ -9,13 +8,10 @@ import net.burningtnt.accountsx.config.AccountManager;
 import net.burningtnt.accountsx.config.AccountWorker;
 import net.burningtnt.accountsx.utils.I18NHelper;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountListWidget.AccountEntry> {
     public AccountListWidget(MinecraftClient client, int left, int right, int top, int bottom, int entryHeight) {
@@ -95,31 +91,19 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
 
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            Matrix4f matrix = context.getMatrices().peek().getPositionMatrix();
-            VertexConsumerProvider vertexConsumers = context.getVertexConsumers();
-
-            double scale = client.getWindow().getScaleFactor();
-            RenderSystem.enableScissor(
-                    (int) (scale * x),
-                    (int) (scale * Math.max(y, AccountListWidget.this.top)),
-                    (int) (scale * entryWidth),
-                    (int) (scale * Math.min(entryHeight, AccountListWidget.this.bottom - y))
-            );
-
-            client.textRenderer.draw(this.account.getAccountStorage().getPlayerName(), (float) (x + 32 + 3), (float) (y + 1), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
-            client.textRenderer.draw(I18NHelper.translate(this.account.getAccountType()), (float) (x + 32 + 3), (float) (y + 1 + 9), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
-            client.textRenderer.draw(I18NHelper.translate(this.account.getAccountState()), (float) (x + 32 + 3), (float) (y + 1 + 18), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
-            RenderSystem.disableScissor();
+            context.drawText(client.textRenderer, this.account.getAccountStorage().getPlayerName(), x + 32 + 3, y + 1, 0xFFFFFF, false);
+            context.drawText(client.textRenderer, I18NHelper.translate(this.account.getAccountType()), x + 32 + 3, y + 1 + 9, 0xFFFFFF, false);
+            context.drawText(client.textRenderer, I18NHelper.translate(this.account.getAccountState()), x + 32 + 3, y + 1 + 18, 0xFFFFFF, false);
 
             if (this.account.getAccountType() != AccountType.ENV_DEFAULT) {
                 if (index > 1) {
-                    client.textRenderer.draw(ACTION_UP, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_UP)), (float) (y + 1 + 5 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                    context.drawText(client.textRenderer, ACTION_UP, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_UP)), y + 1 + 5 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
                 }
 
-                client.textRenderer.draw(ACTION_DELETE, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DELETE)), (float) (y + 1 + 15 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                context.drawText(client.textRenderer, ACTION_DELETE, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DELETE)), y + 1 + 15 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
 
                 if (index < getEntryCount() - 1) {
-                    client.textRenderer.draw(ACTION_DOWN, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DOWN)), (float) (y + 1 + 25 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, matrix, vertexConsumers, TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                    context.drawText(client.textRenderer, ACTION_DOWN, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DOWN)), y + 1 + 25 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
                 }
             }
         }

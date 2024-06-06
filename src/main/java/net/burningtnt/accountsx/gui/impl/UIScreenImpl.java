@@ -110,7 +110,9 @@ public final class UIScreenImpl implements UIScreen {
                 widgetsTop += 25;
             }
 
-            this.addField(new ButtonWidget(widgetsLeft, widgetsTop, 100, 20, Text.translatable("as.general.login"), widget -> {
+            boolean noInputs = UIScreenImpl.this.inputs.isEmpty();
+
+            this.addField(new ButtonWidget(widgetsLeft, widgetsTop, noInputs ? 100 : 95, 20, Text.translatable("as.general.login"), widget -> {
                 Memory memory = new DefaultMemory(this);
 
                 int state;
@@ -154,9 +156,11 @@ public final class UIScreenImpl implements UIScreen {
                 });
             }));
 
-            this.addField(new ButtonWidget(widgetsLeft, widgetsTop + 25, 100, 20, Text.translatable("as.general.action.close"), widget -> {
-                this.close();
-            }));
+            if (noInputs) {
+                this.addField(new ButtonWidget(widgetsLeft, widgetsTop + 25, 100, 20, Text.translatable("as.general.action.close"), widget -> this.close()));
+            } else {
+                this.addField(new ButtonWidget(widgetsLeft + 105, widgetsTop, 95, 20, Text.translatable("as.general.action.close"), widget -> this.close()));
+            }
         }
 
         @Override
