@@ -91,11 +91,9 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
 
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-            // context.enableScissor(x, Math.max(y, AccountListWidget.this.getY()), entryWidth, Math.min(entryHeight, AccountListWidget.this.getBottom() - y));
             context.drawText(client.textRenderer, this.account.getAccountStorage().getPlayerName(), x + 32 + 3, y + 1, 0xFFFFFF, false);
             context.drawText(client.textRenderer, I18NHelper.translate(this.account.getAccountType()), x + 32 + 3, y + 1 + 9, 0xFFFFFF, false);
             context.drawText(client.textRenderer, I18NHelper.translate(this.account.getAccountState()), x + 32 + 3, y + 1 + 18, 0xFFFFFF, false);
-            // context.disableScissor();
 
             if (this.account.getAccountType() != AccountType.ENV_DEFAULT) {
                 if (index > 1) {
