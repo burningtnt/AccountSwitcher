@@ -1,5 +1,6 @@
 package net.burningtnt.accountsx.accounts;
 
+import com.mojang.authlib.Environment;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.accounts.gui.Memory;
@@ -24,7 +25,7 @@ public interface AccountProvider<T extends BaseAccount> {
     void refresh(T account) throws IOException;
 
     default AccountSession createProfile(T account) throws IOException {
-        YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy());
+        YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy(), createDefaultEnvironment());
         MinecraftSessionService sessionService = service.createMinecraftSessionService();
         BaseAccount.AccountStorage s = account.storage;
 
@@ -32,6 +33,10 @@ public interface AccountProvider<T extends BaseAccount> {
                 createSession(s),
                 sessionService, service.createUserApiService(s.getAccessToken())
         );
+    }
+
+    static Environment createDefaultEnvironment() {
+        return new Environment("https://sessionserver.mojang.com", "https://api.minecraftservices.com", "PROD");
     }
 
     static Session createSession(BaseAccount.AccountStorage s) {
