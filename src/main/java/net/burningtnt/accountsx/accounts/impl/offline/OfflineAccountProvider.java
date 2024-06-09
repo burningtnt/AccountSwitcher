@@ -65,7 +65,7 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
 
     @Override
     public AccountSession createProfile(OfflineAccount account) {
-        MinecraftSessionService sessionService = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy()).createMinecraftSessionService();
+        MinecraftSessionService sessionService = new YggdrasilAuthenticationService(MinecraftClient.getInstance().getNetworkProxy(), AccountProvider.createDefaultEnvironment()).createMinecraftSessionService();
         BaseAccount.AccountStorage s = account.getAccountStorage();
 
         return new AccountSession(AccountProvider.createSession(s), sessionService, UserApiService.OFFLINE);
