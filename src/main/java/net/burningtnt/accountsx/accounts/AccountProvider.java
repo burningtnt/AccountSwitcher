@@ -42,10 +42,10 @@ public interface AccountProvider<T extends BaseAccount> {
 
     static Environment createDefaultEnvironment() {
         return Environment.create(
-                "https://authserver.mojang.com",
-                "https://api.mojang.com",
-                "https://sessionserver.mojang.com",
-                "https://api.minecraftservices.com",
+                AuthlibInjectorBreaker.AUTH,
+                AuthlibInjectorBreaker.ACCOUNT,
+                AuthlibInjectorBreaker.SESSION,
+                AuthlibInjectorBreaker.SERVICES,
                 "PROD"
         );
     }
