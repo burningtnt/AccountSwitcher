@@ -36,7 +36,7 @@ public interface AccountProvider<T extends BaseAccount> {
     }
 
     static Environment createDefaultEnvironment() {
-        return new Environment("https://sessionserver.mojang.com", "https://api.minecraftservices.com", "PROD");
+        return new Environment(AuthlibInjectorBreaker.SESSION, AuthlibInjectorBreaker.SERVICES, "PROD");
     }
 
     static Session createSession(BaseAccount.AccountStorage s) {
