@@ -23,7 +23,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modRuntimeOnly "net.fabricmc.fabric-api:fabric-resource-loader-v0:1.1.0+c0e5481fb0"
+    modRuntimeOnly "net.fabricmc.fabric-api:fabric-resource-loader-v0:1.1.5+78017270d1"
     modRuntimeOnly "io.github.llamalad7:mixinextras-fabric:0.3.5"
 }
 
