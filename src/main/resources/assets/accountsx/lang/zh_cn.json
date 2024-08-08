@@ -2,7 +2,6 @@
   "as.general.login": "登陆",
   "as.general.action.close": "返回",
   "as.general.action.ok": "我明白了",
-
   "as.account.objects.player_name": "玩家 ID",
   "as.account.objects.player_uuid": "玩家 UUID",
   "as.account.objects.server_domain": "认证服务器（仅根域名）",
@@ -12,17 +11,14 @@
   "as.account.objects.oauth2.code.generating": "正在生成 OAuth2 代码",
   "as.account.objects.oauth2.code.title": "OAuth2 代码生成完毕",
   "as.account.objects.oauth2.code.desc": "代码（已复制到剪贴板）：%s",
-
   "as.account.action.add_account": "添加账户",
   "as.account.action.operating": "正在操作 ...",
   "as.account.action.fail.title": "账户操作失败",
   "as.account.action.fail.description": "请查看日志，或询问社区帮助",
-
   "as.account.state.unauthorized.name": "未登录",
   "as.account.state.authorizing.name": "登录中",
   "as.account.state.refreshing.name": "刷新中",
   "as.account.state.authorized.name": "正常可用",
-
   "as.account.type.env_default.name": "游戏默认账户",
   "as.account.type.env_default.using": "正在使用游戏默认账号：%s",
   "as.account.type.offline.name": "离线账号",
