@@ -1,6 +1,5 @@
 package net.burningtnt.accountsx.core.adapters;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import net.burningtnt.accountsx.core.AccountsX;
 import net.burningtnt.accountsx.core.adapters.api.AccountSession;
@@ -12,6 +11,7 @@ import net.fabricmc.loader.api.metadata.CustomValue;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 public final class Adapters {
     private Adapters() {
@@ -67,17 +67,16 @@ public final class Adapters {
 
     private static <T> T compute0(String modID, String cvName, Class<T> type) {
         try {
-
             return type.cast(Class.forName(
                     check(
                             check(FabricLoader.getInstance().getModContainer(modID).orElseThrow(
-                                    () -> new IllegalStateException("Mod accountsx-adapter-mc should be bundled in AccountsX!")
+                                    () -> new IllegalStateException("Mod " + modID + " should be bundled in AccountsX!")
                             ).getMetadata().getCustomValue(cvName), CustomValue.CvType.OBJECT, "$").getAsObject().get("class"),
                             CustomValue.CvType.STRING, "$.class"
                     ).getAsString()
             ).getConstructor().newInstance());
         } catch (Exception e) {
-            throw new IllegalStateException("Cannot compute " + type + " implementation.", e);
+            throw new IllegalStateException("Cannot compute " + type.getName() + " implementation.", e);
         }
     }
 

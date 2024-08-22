@@ -1,7 +1,7 @@
 package net.burningtnt.accountsx.adapters.mc.mixins.mixins;
 
 import net.burningtnt.accountsx.core.AccountsX;
-import net.burningtnt.accountsx.core.config.AccountManager;
+import net.burningtnt.accountsx.core.manager.AccountManager;
 import net.burningtnt.accountsx.adapters.mc.ui.AccountScreen;
 import net.burningtnt.accountsx.adapters.mc.ui.I18N;
 import net.minecraft.client.gui.DrawContext;
@@ -56,7 +56,7 @@ public class TitleScreenMixin extends Screen {
         int i = MathHelper.ceil(g * 255.0F) << 24;
 
         if ((i & -67108864) != 0) {
-            context.drawCenteredTextWithShadow(this.textRenderer, I18N.translate(AccountManager.getCurrentAccount()), this.width / 2, 15, 0xFFFFFF | i);
+            context.drawCenteredTextWithShadow(this.textRenderer, I18N.TRANSLATOR.translate(AccountManager.getCurrentAccount()), this.width / 2, 15, 0xFFFFFF | i);
         }
     }
 }

@@ -36,7 +36,7 @@ public class PlayerSkinProviderMixin implements PlayerSkinProviderAccessor {
     }
 
     @Unique
-    public Executor accountX$getExecutor() {
+    public Executor accountsX$getExecutor() {
         return accountsx$executor;
     }
 }

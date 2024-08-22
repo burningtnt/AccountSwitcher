@@ -1,4 +1,4 @@
-package net.burningtnt.accountsx.adapters.mc.mixins.mixins;
+package net.burningtnt.accountsx.adapters.mc.mixins;
 
 import net.minecraft.client.texture.PlayerSkinProvider;
 import org.spongepowered.asm.mixin.Mixin;

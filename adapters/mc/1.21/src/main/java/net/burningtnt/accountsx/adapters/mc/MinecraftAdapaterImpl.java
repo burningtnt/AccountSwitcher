@@ -2,15 +2,22 @@ package net.burningtnt.accountsx.adapters.mc;
 
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
+import com.mojang.authlib.yggdrasil.ProfileResult;
+import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
 import net.burningtnt.accountsx.adapters.mc.mixins.PlayerSkinProviderAccessor;
 import net.burningtnt.accountsx.adapters.mc.mixins.mixins.MinecraftClientAccessor;
+import net.burningtnt.accountsx.adapters.mc.mixins.mixins.SplashTextResourceSupplierAccessor;
 import net.burningtnt.accountsx.authlib.AccountSessionImpl;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
 import net.burningtnt.accountsx.core.accounts.impl.env.EnvironmentAccount;
 import net.burningtnt.accountsx.core.adapters.api.MinecraftAdapter;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.SocialInteractionsManager;
+import net.minecraft.client.session.ProfileKeys;
 import net.minecraft.client.session.Session;
+import net.minecraft.client.session.report.AbuseReportContext;
+import net.minecraft.client.session.report.ReporterEnvironment;
+import net.minecraft.client.session.telemetry.TelemetryManager;
 import net.minecraft.client.texture.PlayerSkinProvider;
 import net.minecraft.client.toast.SystemToast;
 import net.minecraft.client.util.Clipboard;
@@ -33,21 +40,30 @@ public class MinecraftAdapaterImpl implements MinecraftAdapter<AccountSessionImp
         MinecraftSessionService sessionService = session.sessionService();
         UserApiService userAPIService = session.userAPIService();
         BaseAccount.AccountStorage storage = session.storage();
+        UserApiService.UserProperties properties = session.properties();
+        ProfileResult profileResult = session.profileResult();
+        YggdrasilAuthenticationService authenticationService = session.authenticationService();
+
         Session s = new Session(storage.getPlayerName(), storage.getPlayerUUID(), storage.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG);
 
         MinecraftClient client = MinecraftClient.getInstance();
-        ((MinecraftClientAccessor) client).setSession(s);
+        ((MinecraftClientAccessor) client).setAuthenticationService(authenticationService);
         ((MinecraftClientAccessor) client).setSessionService(sessionService);
+        ((MinecraftClientAccessor) client).setSession(s);
+        ((MinecraftClientAccessor) client).setGameProfileFuture(CompletableFuture.completedFuture(profileResult));
         ((MinecraftClientAccessor) client).setUserAPIService(userAPIService);
+        ((MinecraftClientAccessor) client).setUserPropertiesFuture(CompletableFuture.completedFuture(properties));
+        ((SplashTextResourceSupplierAccessor) client.getSplashTextLoader()).setSession(s);
         ((MinecraftClientAccessor) client).setSocialInteractionManager(new SocialInteractionsManager(client, userAPIService));
+        ((MinecraftClientAccessor) client).setTelemetryManager(new TelemetryManager(client, userAPIService, s));
+        ((MinecraftClientAccessor) client).setProfileKeys(ProfileKeys.create(userAPIService, s, client.runDirectory.toPath()));
+        ((MinecraftClientAccessor) client).setAbuseReportContext(AbuseReportContext.create(ReporterEnvironment.ofIntegratedServer(), userAPIService));
         ((MinecraftClientAccessor) client).setSkinProvider(new PlayerSkinProvider(
                 client.getTextureManager(),
                 ((PlayerSkinProviderAccessor) client.getSkinProvider()).accountsX$getDirectory(),
                 sessionService,
-                ((PlayerSkinProviderAccessor) client.getSkinProvider()).accountX$getExecutor()
+                ((PlayerSkinProviderAccessor) client.getSkinProvider()).accountsX$getExecutor()
         ));
-
-        ((MinecraftClientAccessor) client).setGameProfileFuture(CompletableFuture.completedFuture(session.profileResult()));
     }
 
     @Override

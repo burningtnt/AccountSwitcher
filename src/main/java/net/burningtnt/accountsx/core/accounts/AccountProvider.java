@@ -1,6 +1,6 @@
 package net.burningtnt.accountsx.core.accounts;
 
-import net.burningtnt.accountsx.core.adapters.context.AccountAuthServerContext;
+import net.burningtnt.accountsx.core.accounts.model.context.AccountContext;
 import net.burningtnt.accountsx.core.ui.Memory;
 import net.burningtnt.accountsx.core.ui.UIScreen;
 
@@ -11,11 +11,11 @@ public interface AccountProvider<T extends BaseAccount> {
 
     int STATE_HANDLE = 1;
 
-    AccountAuthServerContext createAccountContext(T account);
-
     void configure(UIScreen screen);
 
     int validate(UIScreen screen, Memory memory) throws IllegalArgumentException;
+
+    AccountContext createAccountContext(T account) throws IOException;
 
     T login(Memory memory) throws IOException;
 

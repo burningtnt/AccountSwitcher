@@ -5,15 +5,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.burningtnt.accountsx.core.accounts.AccountProvider;
 import net.burningtnt.accountsx.core.accounts.AccountUUID;
-import net.burningtnt.accountsx.core.adapters.context.AccountAuthServerContext;
 import net.burningtnt.accountsx.core.adapters.Adapters;
-import net.burningtnt.accountsx.core.adapters.context.LoginMode;
+import net.burningtnt.accountsx.core.accounts.model.context.AccountContext;
+import net.burningtnt.accountsx.core.accounts.model.context.AuthPolicy;
 import net.burningtnt.accountsx.core.ui.Memory;
 import net.burningtnt.accountsx.core.ui.UIScreen;
-import net.burningtnt.accountsx.core.utils.IOUtils;
+import net.burningtnt.accountsx.core.utils.NetworkUtils;
 import org.apache.http.client.methods.RequestBuilder;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
@@ -27,29 +26,16 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
     private static final String TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
 
     @Override
-    public AccountAuthServerContext createAccountContext(MicrosoftAccount account) {
-        return new AccountAuthServerContext(
-                MicrosoftConstants.AUTH,
-                MicrosoftConstants.ACCOUNT,
-                MicrosoftConstants.SESSION,
-                MicrosoftConstants.SERVICES,
-                "PROD",
-                LoginMode.ONLINE
-        );
+    public AccountContext createAccountContext(MicrosoftAccount account) throws IOException {
+        return new AccountContext(MicrosoftConstants.SERVER_CONTEXT, MicrosoftConstants.computeMicrosoftPublicKeys(), AuthPolicy.ONLINE);
     }
 
     public MicrosoftAccountProvider() {
-        if (System.getProperty("swing.defaultlaf") == null) {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Throwable ignored) {
-            }
-        }
     }
 
     @Override
     public void configure(UIScreen screen) {
-        screen.setTitle("as.account.objects.external");
+        screen.setTitle("as.account.general.external");
     }
 
     @Override
@@ -63,9 +49,9 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             throw new CancellationException("Screen has been closed.");
         }
 
-        Adapters.getMinecraftAdapter().showToast("as.account.objects.oauth2.code.generating", null);
+        Adapters.getMinecraftAdapter().showToast("as.account.oauth2.code.generating", null);
 
-        JsonObject device = IOUtils.postRequest(RequestBuilder.post(DEVICE_CODE_URL)
+        JsonObject device = NetworkUtils.postRequest(RequestBuilder.post(DEVICE_CODE_URL)
                 .addParameter("client_id", CLIENT_ID)
                 .addParameter("scope", SCOPE)
                 .build());
@@ -91,10 +77,10 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             if (memory.isScreenClosed()) {
                 throw new CancellationException("Screen has been closed.");
             }
-            Adapters.getMinecraftAdapter().showToast("as.account.objects.oauth2.code.title", "as.account.objects.oauth2.code.desc", device.get("user_code").getAsString());
+            Adapters.getMinecraftAdapter().showToast("as.account.oauth2.code.title", "as.account.oauth2.code.desc", device.get("user_code").getAsString());
 
             JsonObject token;
-            token = IOUtils.postRequest(RequestBuilder.post(TOKEN_URL)
+            token = NetworkUtils.postRequest(RequestBuilder.post(TOKEN_URL)
                     .addParameter("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
                     .addParameter("code", device.get("device_code").getAsString())
                     .addParameter("client_id", CLIENT_ID)
@@ -138,7 +124,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             root.addProperty("RelyingParty", "http://auth.xboxlive.com");
             root.addProperty("TokenType", "JWT");
 
-            JsonObject json = IOUtils.postRequest("https://user.auth.xboxlive.com/user/authenticate", root);
+            JsonObject json = NetworkUtils.postRequest("https://user.auth.xboxlive.com/user/authenticate", root);
             xblToken = json.get("Token").getAsString();
             userHash = json.get("DisplayClaims").getAsJsonObject().get("xui").getAsJsonArray().get(0).getAsJsonObject().get("uhs").getAsString();
         }
@@ -157,7 +143,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             root.addProperty("RelyingParty", "rp://api.minecraftservices.com/");
             root.addProperty("TokenType", "JWT");
 
-            xstsToken = IOUtils.postRequest("https://xsts.auth.xboxlive.com/xsts/authorize", root).get("Token").getAsString();
+            xstsToken = NetworkUtils.postRequest("https://xsts.auth.xboxlive.com/xsts/authorize", root).get("Token").getAsString();
         }
 
         String accessToken;
@@ -165,13 +151,13 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             JsonObject root = new JsonObject();
             root.addProperty("identityToken", String.format("XBL3.0 x=%s;%s", userHash, xstsToken));
 
-            JsonObject json = IOUtils.postRequest("https://api.minecraftservices.com/authentication/login_with_xbox", root);
+            JsonObject json = NetworkUtils.postRequest(MicrosoftConstants.MS_LOGIN_XBOX, root);
             accessToken = json.get("access_token").getAsString();
         }
 
         String playerName, playerUUID;
         {
-            JsonObject json = IOUtils.postRequest(RequestBuilder.get("https://api.minecraftservices.com/minecraft/profile")
+            JsonObject json = NetworkUtils.postRequest(RequestBuilder.get(MicrosoftConstants.MS_GAME_PROFILE)
                     .addHeader("Authorization", "Bearer " + accessToken)
                     .build());
 
@@ -188,7 +174,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
     @Override
     public void refresh(MicrosoftAccount account) throws IOException {
         {
-            JsonObject token = IOUtils.postRequest(RequestBuilder.post(TOKEN_URL)
+            JsonObject token = NetworkUtils.postRequest(RequestBuilder.post(TOKEN_URL)
                     .addParameter("client_id", CLIENT_ID)
                     .addParameter("refresh_token", account.getMicrosoftAccountRefreshToken())
                     .addParameter("grant_type", "refresh_token")
@@ -212,7 +198,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             root.addProperty("RelyingParty", "http://auth.xboxlive.com");
             root.addProperty("TokenType", "JWT");
 
-            JsonObject json = IOUtils.postRequest("https://user.auth.xboxlive.com/user/authenticate", root);
+            JsonObject json = NetworkUtils.postRequest("https://user.auth.xboxlive.com/user/authenticate", root);
             xblToken = json.get("Token").getAsString();
             userHash = json.get("DisplayClaims").getAsJsonObject().get("xui").getAsJsonArray().get(0).getAsJsonObject().get("uhs").getAsString();
         }
@@ -231,7 +217,7 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             root.addProperty("RelyingParty", "rp://api.minecraftservices.com/");
             root.addProperty("TokenType", "JWT");
 
-            xstsToken = IOUtils.postRequest("https://xsts.auth.xboxlive.com/xsts/authorize", root).get("Token").getAsString();
+            xstsToken = NetworkUtils.postRequest("https://xsts.auth.xboxlive.com/xsts/authorize", root).get("Token").getAsString();
         }
 
         String accessToken;
@@ -239,13 +225,13 @@ public class MicrosoftAccountProvider implements AccountProvider<MicrosoftAccoun
             JsonObject root = new JsonObject();
             root.addProperty("identityToken", String.format("XBL3.0 x=%s;%s", userHash, xstsToken));
 
-            JsonObject json = IOUtils.postRequest("https://api.minecraftservices.com/authentication/login_with_xbox", root);
+            JsonObject json = NetworkUtils.postRequest(MicrosoftConstants.MS_LOGIN_XBOX, root);
             accessToken = json.get("access_token").getAsString();
         }
 
         String playerName, playerUUID;
         {
-            JsonObject json = IOUtils.postRequest(RequestBuilder.get("https://api.minecraftservices.com/minecraft/profile")
+            JsonObject json = NetworkUtils.postRequest(RequestBuilder.get(MicrosoftConstants.MS_GAME_PROFILE)
                     .addHeader("Authorization", "Bearer " + accessToken)
                     .build());
 

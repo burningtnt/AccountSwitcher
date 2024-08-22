@@ -4,87 +4,78 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import com.mojang.authlib.Environment;
+import com.mojang.authlib.HttpAuthenticationService;
 import com.mojang.authlib.SignatureState;
+import com.mojang.authlib.exceptions.AuthenticationException;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.authlib.minecraft.MinecraftProfileTextures;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import com.mojang.authlib.properties.Property;
-import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
-import com.mojang.authlib.yggdrasil.YggdrasilMinecraftSessionService;
+import com.mojang.authlib.yggdrasil.*;
 import com.mojang.authlib.yggdrasil.response.MinecraftTexturesPayload;
 import com.mojang.util.UUIDTypeAdapter;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
-import net.burningtnt.accountsx.core.adapters.context.AccountAuthServerContext;
+import net.burningtnt.accountsx.core.accounts.model.context.AccountContext;
+import net.burningtnt.accountsx.core.accounts.model.context.AuthSecurityContext;
+import net.burningtnt.accountsx.core.accounts.model.context.SkinURLVerifier;
 import net.burningtnt.accountsx.core.adapters.api.AuthlibAdapter;
+import net.burningtnt.accountsx.core.utils.UnsafeVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiFunction;
 
 public final class AuthlibAdapterImpl implements AuthlibAdapter<AccountSessionImpl> {
     @Override
-    public AccountSessionImpl createAccountProfile(BaseAccount.AccountStorage storage, AccountAuthServerContext context, Proxy proxy) {
+    public AccountSessionImpl createAccountProfile(BaseAccount.AccountStorage storage, AccountContext context, Proxy proxy) throws IOException {
         if (context == null) {
             YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(proxy);
-
             MinecraftSessionService sessionService = service.createMinecraftSessionService();
 
-            return new AccountSessionImpl(storage, sessionService, UserApiService.OFFLINE, sessionService.fetchProfile(storage.getPlayerUUID(), true));
+            return new AccountSessionImpl(
+                    storage, service, sessionService,
+                    UserApiService.OFFLINE_PROPERTIES, UserApiService.OFFLINE, computeProfile(storage, sessionService)
+            );
         } else {
-            Environment env = new Environment(context.sessionURL(), context.serviceURL(), context.name());
-            YggdrasilAuthenticationService service = new YggdrasilAuthenticationService(proxy, env);
+            Environment env = new Environment(context.server().sessionURL(), context.server().serviceURL(), context.server().name());
+            YggdrasilAuthenticationService service = ofYggdrasilAuthenticationService(proxy, env, context.security());
+
             MinecraftSessionService sessionService = new YggdrasilMinecraftSessionService(service.getServicesKeySet(), service.getProxy(), env) {
                 private static final Logger LOGGER = LoggerFactory.getLogger(YggdrasilMinecraftSessionService.class);
 
-                private static final BiFunction<YggdrasilMinecraftSessionService, Property, SignatureState> GET_PROPERTY_SIGNATURE_STATE = new BiFunction<YggdrasilMinecraftSessionService, Property, SignatureState>() {
-                    private static final MethodHandle MH;
-
-                    static {
-                        try {
-                            MH = MethodHandles.privateLookupIn(
-                                    YggdrasilMinecraftSessionService.class,
-                                    MethodHandles.lookup()
-                            ).findVirtual(
-                                    YggdrasilMinecraftSessionService.class,
-                                    "getPropertySignatureState",
-                                    MethodType.methodType(SignatureState.class, Property.class)
-                            );
-                        } catch (ReflectiveOperationException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    }
-
-                    @Override
-                    public SignatureState apply(YggdrasilMinecraftSessionService instance, Property property) {
-                        try {
-                            return (SignatureState) MH.invoke(instance, property);
-                        } catch (RuntimeException e) {
-                            throw e;
-                        } catch (Throwable e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                };
+                private static final MethodHandle GET_PROPERTY_SIGNATURE_STATE = UnsafeVM.prepareMH(
+                        "YggdrasilMinecraftSessionService::getPropertySignatureState", lookup -> lookup.findVirtual(
+                                YggdrasilMinecraftSessionService.class,
+                                "getPropertySignatureState",
+                                MethodType.methodType(SignatureState.class, Property.class)
+                        )
+                );
 
                 private final Gson gson = new GsonBuilder().registerTypeAdapter(UUID.class, new UUIDTypeAdapter()).create();
 
                 @Override
                 public MinecraftProfileTextures unpackTextures(Property packedTextures) {
-                    final String value = packedTextures.value();
-                    final SignatureState signatureState = GET_PROPERTY_SIGNATURE_STATE.apply(this, packedTextures);
-
-                    final MinecraftTexturesPayload result;
+                    String value = packedTextures.value();
+                    SignatureState signatureState;
                     try {
-                        final String json = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+                        signatureState = (SignatureState) GET_PROPERTY_SIGNATURE_STATE.invoke((YggdrasilMinecraftSessionService) this, packedTextures);
+                    } catch (Throwable t) {
+                        throw UnsafeVM.fail("YggdrasilMinecraftSessionService::getPropertySignatureState", t);
+                    }
+
+                    MinecraftTexturesPayload result;
+                    try {
+                        String json = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
                         result = this.gson.fromJson(json, MinecraftTexturesPayload.class);
                     } catch (final JsonParseException | IllegalArgumentException e) {
                         LOGGER.error("Could not decode textures payload", e);
@@ -95,18 +86,26 @@ public final class AuthlibAdapterImpl implements AuthlibAdapter<AccountSessionIm
                         return MinecraftProfileTextures.EMPTY;
                     }
 
-                    final Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> textures = result.textures();
+                    for (MinecraftProfileTexture entry : result.textures().values()) {
+                        String url = entry.getUrl();
+                        if (context.security().checkSkinURL(url)) {
+                            LOGGER.error("Textures payload contains blocked domain: {}", url);
+                            return MinecraftProfileTextures.EMPTY;
+                        }
+                    }
+
+                    Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> textures = result.textures();
 
                     return new MinecraftProfileTextures(
-                        textures.get(MinecraftProfileTexture.Type.SKIN),
-                        textures.get(MinecraftProfileTexture.Type.CAPE),
-                        textures.get(MinecraftProfileTexture.Type.ELYTRA),
-                        signatureState
+                            textures.get(MinecraftProfileTexture.Type.SKIN),
+                            textures.get(MinecraftProfileTexture.Type.CAPE),
+                            textures.get(MinecraftProfileTexture.Type.ELYTRA),
+                            signatureState
                     );
                 }
             };
 
-            return new AccountSessionImpl(storage, sessionService, switch (context.mode()) {
+            UserApiService userAPIService = switch (context.policy()) {
                 case ONLINE -> service.createUserApiService(storage.getAccessToken());
                 case OFFLINE -> UserApiService.OFFLINE;
                 case TRY -> {
@@ -116,7 +115,103 @@ public final class AuthlibAdapterImpl implements AuthlibAdapter<AccountSessionIm
                         yield UserApiService.OFFLINE;
                     }
                 }
-            }, sessionService.fetchProfile(storage.getPlayerUUID(), true));
+            };
+            return new AccountSessionImpl(storage, service, sessionService, switch (context.policy()) {
+                case ONLINE -> {
+                    try {
+                        yield userAPIService.fetchProperties();
+                    } catch (AuthenticationException e) {
+                        throw new IOException(e);
+                    }
+                }
+                case OFFLINE -> UserApiService.OFFLINE_PROPERTIES;
+                case TRY -> {
+                    try {
+                        yield userAPIService.fetchProperties();
+                    } catch (AuthenticationException e) {
+                        yield UserApiService.OFFLINE_PROPERTIES;
+                    }
+                }
+            }, userAPIService, computeProfile(storage, sessionService));
+        }
+    }
+
+    private static final MethodHandle YASA_AL = UnsafeVM.getClassAllocator(YggdrasilAuthenticationService.class);
+
+    private static final MethodHandle YASA_S_PROXY = UnsafeVM.prepareMH(
+            "HttpAuthenticationService.proxy", lookup -> lookup.findSetter(HttpAuthenticationService.class, "proxy", Proxy.class)
+    );
+
+    private static final MethodHandle YASA_S_ENV = UnsafeVM.prepareMH(
+            "YggdrasilAuthenticationService.environment", lookup -> lookup.findSetter(YggdrasilAuthenticationService.class, "environment", Environment.class)
+    );
+
+    private static final MethodHandle YASA_S_KS = UnsafeVM.prepareMH(
+            "YggdrasilAuthenticationService.servicesKeySet", lookup -> lookup.findSetter(YggdrasilAuthenticationService.class, "servicesKeySet", ServicesKeySet.class)
+    );
+
+    private static YggdrasilAuthenticationService ofYggdrasilAuthenticationService(Proxy proxy, Environment env, AuthSecurityContext securityContext) {
+        try {
+            YggdrasilAuthenticationService service = (YggdrasilAuthenticationService) YASA_AL.invoke();
+            YASA_S_PROXY.invoke(service, proxy);
+            YASA_S_ENV.invoke(service, env);
+            List<ServicesKeyInfo> profilePropertyKeys = DefaultServicesKeyInfo.process(securityContext.profilePropertyKeys());
+            List<ServicesKeyInfo> playerCertificateKeys = DefaultServicesKeyInfo.process(securityContext.playerCertificateKeys());
+            YASA_S_KS.invoke(service, (ServicesKeySet) type -> switch (type) {
+                case PROFILE_PROPERTY -> profilePropertyKeys;
+                case PROFILE_KEY -> playerCertificateKeys;
+            });
+
+            return service;
+        } catch (Throwable t) {
+            throw UnsafeVM.fail("YggdrasilAuthenticationService::new", t);
+        }
+    }
+
+    private ProfileResult computeProfile(BaseAccount.AccountStorage storage, MinecraftSessionService sessionService) {
+        return sessionService.fetchProfile(storage.getPlayerUUID(), true);
+    }
+
+    private record DefaultServicesKeyInfo(PublicKey publicKey) implements ServicesKeyInfo {
+        public static List<ServicesKeyInfo> process(List<PublicKey> publicKeys) {
+            return publicKeys.stream().<ServicesKeyInfo>map(DefaultServicesKeyInfo::new).toList();
+        }
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(ServicesKeyInfo.class);
+
+        @Override
+        public int keyBitCount() {
+            return 4096;
+        }
+
+        @Override
+        public Signature signature() {
+            try {
+                final Signature signature = Signature.getInstance("SHA1withRSA");
+                signature.initVerify(publicKey);
+                return signature;
+            } catch (final NoSuchAlgorithmException | InvalidKeyException e) {
+                throw new AssertionError("Failed to create signature", e);
+            }
+        }
+
+        @Override
+        public boolean validateProperty(Property property) {
+            final Signature signature = signature();
+            final byte[] expected;
+            try {
+                expected = Base64.getDecoder().decode(property.signature());
+            } catch (final IllegalArgumentException e) {
+                LOGGER.error("Malformed signature encoding on property {}", property, e);
+                return false;
+            }
+            try {
+                signature.update(property.value().getBytes());
+                return signature.verify(expected);
+            } catch (final SignatureException e) {
+                LOGGER.error("Failed to verify signature on property {}", property, e);
+            }
+            return false;
         }
     }
 }

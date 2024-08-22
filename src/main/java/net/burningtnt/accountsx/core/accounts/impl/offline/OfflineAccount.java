@@ -1,6 +1,6 @@
 package net.burningtnt.accountsx.core.accounts.impl.offline;
 
-import net.burningtnt.accountsx.core.accounts.AccountType;
+import net.burningtnt.accountsx.core.accounts.model.AccountType;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
 
 import java.util.UUID;

@@ -1,9 +1,9 @@
-package net.burningtnt.accountsx.adapters.mc.mixins.mixins;
+package net.burningtnt.accountsx.adapters.mc.mixins;
 
-import net.burningtnt.accountsx.core.AccountsX;
-import net.burningtnt.accountsx.core.config.AccountManager;
 import net.burningtnt.accountsx.adapters.mc.ui.AccountScreen;
 import net.burningtnt.accountsx.adapters.mc.ui.I18N;
+import net.burningtnt.accountsx.core.AccountsX;
+import net.burningtnt.accountsx.core.manager.AccountManager;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
@@ -43,7 +43,7 @@ public class TitleScreenMixin extends Screen {
         int j = this.height / 4 + 48;
         this.addDrawableChild((ClickableWidget) new TexturedButtonWidget(
                 this.width / 2 + 104, j + 24 * 2, 20, 20, 0, 0, 20, SWITCH_ACCOUNT_ICON_TEXTURE, 32, 64,
-                (buttonWidget) -> this.client.setScreen(new AccountScreen(this)), Text.translatable("as.account.action.add_account")
+                (buttonWidget) -> this.client.setScreen(new AccountScreen(this)), Text.translatable("as.account.general.add_account")
         ));
     }
 
@@ -54,7 +54,7 @@ public class TitleScreenMixin extends Screen {
         int i = MathHelper.ceil(g * 255.0F) << 24;
 
         if ((i & -67108864) != 0) {
-            context.drawCenteredTextWithShadow(this.textRenderer, I18N.translate(AccountManager.getCurrentAccount()), this.width / 2, 15, 0xFFFFFF | i);
+            context.drawCenteredTextWithShadow(this.textRenderer, I18N.TRANSLATOR.translate(AccountManager.getCurrentAccount()), this.width / 2, 15, 0xFFFFFF | i);
         }
     }
 }

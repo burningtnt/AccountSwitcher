@@ -1,8 +1,7 @@
 package net.burningtnt.accountsx.adapters.mc.ui.impl;
 
 import net.burningtnt.accountsx.core.ui.Memory;
-import net.burningtnt.accountsx.core.utils.threading.ThreadState;
-import net.burningtnt.accountsx.core.utils.threading.Threading;
+import net.burningtnt.accountsx.core.utils.Threading;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 
@@ -29,7 +28,7 @@ public final class DefaultMemory implements Memory {
     }
 
     @Override
-    @ThreadState(ThreadState.ACCOUNT_WORKER)
+    @Threading.Thread(Threading.WORKER)
     public boolean isScreenClosed() {
         Threading.checkAccountWorkerThread();
 

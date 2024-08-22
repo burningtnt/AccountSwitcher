@@ -1,8 +1,4 @@
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
+import com.google.gson.*
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -23,7 +19,7 @@ buildscript {
     }
 }
 
-version = "1.1.0"
+rootProject.version = "1.1.2"
 
 repositories {
     maven(url = "https://maven.fabricmc.net/")
@@ -36,6 +32,7 @@ dependencies {
     compileOnly("com.google.guava:guava:31.1-jre")
     compileOnly("org.apache.httpcomponents:httpclient:4.5.13")
     compileOnly("org.apache.logging.log4j:log4j-api:2.22.1")
+    compileOnly("org.ow2.asm:asm:9.6")
 }
 
 tasks.processResources {

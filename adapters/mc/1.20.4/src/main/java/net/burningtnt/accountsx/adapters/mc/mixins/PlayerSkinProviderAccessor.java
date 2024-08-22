@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
 public interface PlayerSkinProviderAccessor {
-    Path accountx$getDirectory();
+    Path accountsX$getDirectory();
 
-    Executor accountx$getExecutor();
+    Executor accountsX$getExecutor();
 }

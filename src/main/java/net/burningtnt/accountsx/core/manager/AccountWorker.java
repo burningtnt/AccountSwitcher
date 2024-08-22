@@ -1,4 +1,4 @@
-package net.burningtnt.accountsx.core.config;
+package net.burningtnt.accountsx.core.manager;
 
 import net.burningtnt.accountsx.core.AccountsX;
 import net.burningtnt.accountsx.core.adapters.Adapters;
@@ -15,23 +15,27 @@ public final class AccountWorker {
     private AccountWorker() {
     }
 
-    private static volatile long taskStartTime = -1;
+    private static final int TASK_DISPLAY_DELAY_MS = 100;
 
     private static final Queue<Task> taskQueue = new ConcurrentLinkedQueue<>();
+
+    private static volatile long taskStartTime = -1;
 
     public static void submit(Task task) {
         taskQueue.add(task);
     }
 
     public static boolean isRunning() {
-        return taskStartTime != -1 && System.currentTimeMillis() - taskStartTime >= 100;
+        long t = taskStartTime;
+
+        return t != -1 && System.currentTimeMillis() - t >= TASK_DISPLAY_DELAY_MS;
     }
 
     public static Thread getWorkerThread() {
         return WORKER;
     }
 
-    private static final Thread WORKER = new Thread((ThreadGroup) null, "AccountsX Background Thread") {
+    private static final Thread WORKER = new Thread((ThreadGroup) null, "AccountsX Background Worker Thread") {
         {
             setDaemon(true);
         }
@@ -53,7 +57,7 @@ public final class AccountWorker {
                             AccountsX.LOGGER.warn("Cancelled by user.", e);
                         } catch (Throwable t) {
                             AccountsX.LOGGER.warn("An exception has occurred in AccountsX Background Thread.", t);
-                            Adapters.getMinecraftAdapter().showToast("as.account.action.fail.title", "as.account.action.fail.description");
+                            Adapters.getMinecraftAdapter().showToast("as.account.fail.title", AccountManager.handleException(t));
                         } finally {
                             taskStartTime = -1;
                         }

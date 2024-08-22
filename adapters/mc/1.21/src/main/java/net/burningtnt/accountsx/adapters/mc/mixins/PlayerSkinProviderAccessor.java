@@ -9,5 +9,5 @@ public interface PlayerSkinProviderAccessor {
     @Unique
     Path accountsX$getDirectory();
 
-    Executor accountX$getExecutor();
+    Executor accountsX$getExecutor();
 }

@@ -45,16 +45,17 @@ public final class AccountUUID {
     }
 
     private static long parse4Nibbles(String name, int pos) {
-        byte[] ns = NIBBLES;
         char ch1 = name.charAt(pos);
         char ch2 = name.charAt(pos + 1);
         char ch3 = name.charAt(pos + 2);
         char ch4 = name.charAt(pos + 3);
+
+        byte[] ns = NIBBLES;
         return (ch1 | ch2 | ch3 | ch4) > 0xff ?
                 -1 : ns[ch1] << 12 | ns[ch2] << 8 | ns[ch3] << 4 | ns[ch4];
     }
 
-    public static UUID generate(String playerName) {
+    public static UUID ofPlayerName(String playerName) {
         return UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(StandardCharsets.UTF_8));
     }
 

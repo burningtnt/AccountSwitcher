@@ -1,14 +1,14 @@
 package net.burningtnt.accountsx.adapters.mc.ui.impl;
 
+import net.burningtnt.accountsx.adapters.mc.ui.AccountScreen;
+import net.burningtnt.accountsx.adapters.mc.ui.ButtonWidget;
 import net.burningtnt.accountsx.core.AccountsX;
 import net.burningtnt.accountsx.core.accounts.AccountProvider;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
+import net.burningtnt.accountsx.core.manager.AccountManager;
+import net.burningtnt.accountsx.core.manager.AccountWorker;
 import net.burningtnt.accountsx.core.ui.Memory;
 import net.burningtnt.accountsx.core.ui.UIScreen;
-import net.burningtnt.accountsx.core.config.AccountManager;
-import net.burningtnt.accountsx.core.config.AccountWorker;
-import net.burningtnt.accountsx.adapters.mc.ui.AccountScreen;
-import net.burningtnt.accountsx.adapters.mc.ui.ButtonWidget;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -112,7 +112,7 @@ public final class UIScreenImpl implements UIScreen {
 
             boolean noInputs = UIScreenImpl.this.inputs.isEmpty();
 
-            this.addField(new ButtonWidget(widgetsLeft, widgetsTop, noInputs ? 100 : 95, 20, Text.translatable("as.general.login"), widget -> {
+            this.addField(new ButtonWidget(widgetsLeft, widgetsTop, noInputs ? 100 : 95, 20, Text.translatable("as.account.general.login"), widget -> {
                 Memory memory = new DefaultMemory(this);
 
                 int state;

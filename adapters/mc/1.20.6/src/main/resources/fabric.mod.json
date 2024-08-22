@@ -5,7 +5,9 @@
   "name": "Accounts X Minecraft Adapter",
   "description": "",
   "authors": [
-    "IAFEnvoy", "Burning_TNT", "JianMoOvO"
+    "IAFEnvoy",
+    "Burning_TNT",
+    "JianMoOvO"
   ],
   "license": "GPL-3.0",
   "environment": "client",
@@ -23,6 +25,11 @@
   "custom": {
     "accountsx:adapter.mc": {
       "class": "net.burningtnt.accountsx.adapters.mc.MinecraftAdapaterImpl"
+    },
+    "modmenu": {
+      "parent": {
+        "id": "accountsx"
+      }
     }
   }
 }

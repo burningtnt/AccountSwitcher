@@ -5,7 +5,9 @@
   "name": "Accounts X Authlib Adapter",
   "description": "",
   "authors": [
-    "IAFEnvoy", "Burning_TNT", "JianMoOvO"
+    "IAFEnvoy",
+    "Burning_TNT",
+    "JianMoOvO"
   ],
   "license": "GPL-3.0",
   "environment": "client",
@@ -18,6 +20,11 @@
   "custom": {
     "accountsx:adapter.authlib": {
       "class": "net.burningtnt.accountsx.authlib.AuthlibAdapterImpl"
+    },
+    "modmenu": {
+      "parent": {
+        "id": "accountsx"
+      }
     }
   }
 }

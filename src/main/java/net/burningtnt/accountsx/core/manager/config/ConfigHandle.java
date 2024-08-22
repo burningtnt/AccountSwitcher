@@ -1,9 +1,13 @@
-package net.burningtnt.accountsx.core.config;
+package net.burningtnt.accountsx.core.manager.config;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import net.burningtnt.accountsx.core.AccountsX;
-import net.burningtnt.accountsx.core.accounts.AccountType;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
-import net.burningtnt.accountsx.core.utils.IOUtils;
+import net.burningtnt.accountsx.core.accounts.model.AccountType;
+import net.burningtnt.accountsx.core.manager.AccountManager;
+import net.burningtnt.accountsx.core.utils.NetworkUtils;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -22,12 +26,14 @@ public final class ConfigHandle {
     private static final String CONFIG_LOCATION = "accountsx/accounts.json";
 
     private static final class Config {
+        public static final int CURRENT_VERSION = ConfigVersion.VALUES[ConfigVersion.VALUES.length - 1].getVersion();
+
         private final int version;
 
         private final List<BaseAccount> accounts;
 
         private Config(List<BaseAccount> accounts) {
-            this.version = 0;
+            this.version = CURRENT_VERSION;
             this.accounts = accounts;
         }
     }
@@ -38,23 +44,38 @@ public final class ConfigHandle {
         try {
             if (!Files.exists(configFile)) {
                 Files.createDirectories(configFile.getParent());
-                Files.writeString(configFile, IOUtils.GSON.toJson(new Config(List.of())));
+                Files.writeString(configFile, NetworkUtils.GSON.toJson(new Config(List.of())));
                 return List.of();
             }
 
             if (!Files.isRegularFile(configFile)) {
                 Files.delete(configFile);
-                Files.writeString(configFile, IOUtils.GSON.toJson(new Config(List.of())));
+                Files.writeString(configFile, NetworkUtils.GSON.toJson(new Config(List.of())));
                 return List.of();
             }
 
+            JsonElement data;
             try (Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
-                Config config = IOUtils.GSON.fromJson(reader, Config.class);
-
-                return config.accounts;
+                data = NetworkUtils.GSON.fromJson(reader, JsonElement.class);
             }
-        } catch (Exception e) {
-            AccountsX.LOGGER.warn("Cannot load the config file.", e);
+
+            if (data instanceof JsonObject jo) {
+                if (jo.get("version") instanceof JsonPrimitive versionJP && versionJP.isNumber()) {
+                    int configVersion = versionJP.getAsNumber().intValue();
+
+                    for (ConfigVersion value : ConfigVersion.VALUES) {
+                        if (configVersion < value.getVersion()) {
+                            value.upgrade(jo);
+                        }
+                    }
+
+                    return NetworkUtils.GSON.fromJson(data, Config.class).accounts;
+                }
+            }
+
+            throw new IllegalStateException("Illegal config.");
+        } catch (Throwable t) {
+            AccountsX.LOGGER.warn("Cannot load the config file.", t);
             return List.of();
         }
     }
@@ -71,7 +92,7 @@ public final class ConfigHandle {
         }
 
         try (Writer writer = Files.newBufferedWriter(configFile, StandardCharsets.UTF_8)) {
-            IOUtils.GSON.toJson(new Config(accounts), writer);
+            NetworkUtils.GSON.toJson(new Config(accounts), writer);
         }
     }
 }

@@ -1,12 +1,11 @@
 package net.burningtnt.accountsx.adapters.mc.ui;
 
-import net.burningtnt.accountsx.core.accounts.AccountType;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
+import net.burningtnt.accountsx.core.accounts.model.AccountType;
 import net.burningtnt.accountsx.core.adapters.api.AccountSession;
-import net.burningtnt.accountsx.core.config.AccountManager;
-import net.burningtnt.accountsx.core.config.AccountWorker;
+import net.burningtnt.accountsx.core.manager.AccountManager;
+import net.burningtnt.accountsx.core.manager.AccountWorker;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.text.Text;
@@ -92,18 +91,18 @@ public class AccountListWidget extends AlwaysSelectedEntryListWidget<AccountList
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             context.drawText(client.textRenderer, this.account.getAccountStorage().getPlayerName(), x + 32 + 3, y + 1, 0xFFFFFF, false);
-            context.drawText(client.textRenderer, I18N.translate(this.account.getAccountType()), x + 32 + 3, y + 1 + 9, 0xFFFFFF, false);
-            context.drawText(client.textRenderer, I18N.translate(this.account.getAccountState()), x + 32 + 3, y + 1 + 18, 0xFFFFFF, false);
+            context.drawText(client.textRenderer, I18N.TRANSLATOR.translate(this.account.getAccountType()), x + 32 + 3, y + 1 + 9, 0xFFFFFF, false);
+            context.drawText(client.textRenderer, I18N.TRANSLATOR.translate(this.account.getAccountStorage().getState()), x + 32 + 3, y + 1 + 18, 0xFFFFFF, false);
 
             if (this.account.getAccountType() != AccountType.ENV_DEFAULT) {
                 if (index > 1) {
-                    client.textRenderer.draw(ACTION_UP, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_UP)), (float) (y + 1 + 5 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                    context.drawText(client.textRenderer, ACTION_UP, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_UP)), y + 1 + 5 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
                 }
 
-                client.textRenderer.draw(ACTION_DELETE, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DELETE)), (float) (y + 1 + 15 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                context.drawText(client.textRenderer, ACTION_DELETE, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DELETE)), y + 1 + 15 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
 
                 if (index < getEntryCount() - 1) {
-                    client.textRenderer.draw(ACTION_DOWN, (float) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DOWN)), (float) (y + 1 + 25 - client.textRenderer.fontHeight / 2), 0xFFFFFF, false, context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL, 0, 0xF000F0);
+                    context.drawText(client.textRenderer, ACTION_DOWN, (int) (x + entryWidth - 1.5 * client.textRenderer.getWidth(ACTION_DOWN)), y + 1 + 25 - client.textRenderer.fontHeight / 2, 0xFFFFFF, false);
                 }
             }
         }

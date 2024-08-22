@@ -3,7 +3,7 @@ package net.burningtnt.accountsx.core.accounts.impl.offline;
 import net.burningtnt.accountsx.core.accounts.AccountProvider;
 import net.burningtnt.accountsx.core.accounts.AccountUUID;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
-import net.burningtnt.accountsx.core.adapters.context.AccountAuthServerContext;
+import net.burningtnt.accountsx.core.accounts.model.context.AccountContext;
 import net.burningtnt.accountsx.core.ui.Memory;
 import net.burningtnt.accountsx.core.ui.UIScreen;
 
@@ -14,13 +14,13 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
     private static final String GUID_PLAYER_UUID = "guid:as.login.offline.widgets.player_uuid";
 
     @Override
-    public AccountAuthServerContext createAccountContext(OfflineAccount account) {
+    public AccountContext createAccountContext(OfflineAccount account) {
         return null;
     }
 
     @Override
     public void configure(UIScreen screen) {
-        screen.setTitle("as.general.login");
+        screen.setTitle("as.account.general.login");
         screen.putTextInput(GUID_PLAYER_NAME, "as.account.objects.player_name");
         screen.putTextInput(GUID_PLAYER_UUID, "as.account.objects.player_uuid");
     }
@@ -32,7 +32,7 @@ public class OfflineAccountProvider implements AccountProvider<OfflineAccount> {
 
         String playerUUIDString = screen.getTextInput(GUID_PLAYER_UUID);
         if (playerUUIDString.isEmpty()) {
-            memory.set(GUID_PLAYER_UUID, AccountUUID.generate(playerName));
+            memory.set(GUID_PLAYER_UUID, AccountUUID.ofPlayerName(playerName));
         } else {
             try {
                 memory.set(GUID_PLAYER_UUID, AccountUUID.parse(playerUUIDString));

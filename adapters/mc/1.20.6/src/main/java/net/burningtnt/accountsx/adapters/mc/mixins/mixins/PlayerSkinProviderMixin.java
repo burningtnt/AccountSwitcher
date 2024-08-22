@@ -31,11 +31,11 @@ public class PlayerSkinProviderMixin implements PlayerSkinProviderAccessor {
     }
 
     @Unique
-    public Path accountx$getDirectory() {
+    public Path accountsX$getDirectory() {
         return accountsx$directory;
     }
 
-    public Executor accountx$getExecutor() {
+    public Executor accountsX$getExecutor() {
         return accountsx$executor;
     }
 }

@@ -9,8 +9,9 @@ import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import net.burningtnt.accountsx.core.utils.threading.ThreadState;
-import net.burningtnt.accountsx.core.utils.threading.Threading;
+import net.burningtnt.accountsx.core.accounts.model.AccountState;
+import net.burningtnt.accountsx.core.accounts.model.AccountType;
+import net.burningtnt.accountsx.core.utils.Threading;
 
 import java.io.IOException;
 import java.util.Map;
@@ -44,7 +45,7 @@ public abstract class BaseAccount {
                 @Override
                 public BaseAccount read(JsonReader in) {
                     JsonObject jo = Streams.parse(in).getAsJsonObject();
-                    return compute(AccountType.valueOf(jo.get("type").getAsJsonPrimitive().getAsString())).fromJsonTree(jo);
+                    return compute(gson.fromJson(jo.get("type"), AccountType.class)).fromJsonTree(jo);
                 }
             };
         }
@@ -103,22 +104,18 @@ public abstract class BaseAccount {
         return storage;
     }
 
-    public final AccountState getAccountState() {
-        return this.storage.state;
-    }
-
     public final AccountType getAccountType() {
         return type;
     }
 
-    @ThreadState(ThreadState.ACCOUNT_WORKER)
+    @Threading.Thread(Threading.WORKER)
     public final void setProfile(String accessToken, String playerName, UUID playerUUID) {
         Threading.checkAccountWorkerThread();
 
         this.storage = new AccountStorage(accessToken, playerName, playerUUID, AccountState.AUTHORIZED);
     }
 
-    @ThreadState(ThreadState.ACCOUNT_WORKER)
+    @Threading.Thread(Threading.WORKER)
     public final void setProfileState(AccountState state) {
         Threading.checkAccountWorkerThread();
 

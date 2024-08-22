@@ -3,8 +3,9 @@ package net.burningtnt.accountsx.adapters.mc;
 import com.mojang.authlib.minecraft.MinecraftSessionService;
 import com.mojang.authlib.minecraft.UserApiService;
 import com.mojang.authlib.properties.PropertyMap;
-import net.burningtnt.accountsx.adapters.mc.mixins.mixins.PlayerSkinProviderAccessor;
-import net.burningtnt.accountsx.adapters.mc.mixins.mixins.MinecraftClientAccessor;
+import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+import net.burningtnt.accountsx.adapters.mc.mixins.MinecraftClientAccessor;
+import net.burningtnt.accountsx.adapters.mc.mixins.PlayerSkinProviderAccessor;
 import net.burningtnt.accountsx.authlib.AccountSessionImpl;
 import net.burningtnt.accountsx.core.accounts.AccountUUID;
 import net.burningtnt.accountsx.core.accounts.BaseAccount;
@@ -15,6 +16,7 @@ import net.minecraft.client.network.SocialInteractionsManager;
 import net.minecraft.client.texture.PlayerSkinProvider;
 import net.minecraft.client.toast.SystemToast;
 import net.minecraft.client.util.Clipboard;
+import net.minecraft.client.util.ProfileKeys;
 import net.minecraft.client.util.Session;
 import net.minecraft.text.Text;
 import net.minecraft.util.Util;
@@ -34,13 +36,17 @@ public class MinecraftAdapaterImpl implements MinecraftAdapter<AccountSessionImp
         MinecraftSessionService sessionService = session.sessionService();
         UserApiService userAPIService = session.userAPIService();
         BaseAccount.AccountStorage storage = session.storage();
+        YggdrasilAuthenticationService authenticationService = session.authenticationService();
+
         Session s = new Session(storage.getPlayerName(), AccountUUID.toMinecraftStyleString(storage.getPlayerUUID()), storage.getAccessToken(), Optional.empty(), Optional.empty(), Session.AccountType.MOJANG);
 
         MinecraftClient client = MinecraftClient.getInstance();
         ((MinecraftClientAccessor) client).setSession(s);
+        ((MinecraftClientAccessor) client).setAuthenticationService(authenticationService);
         ((MinecraftClientAccessor) client).setSessionService(sessionService);
         ((MinecraftClientAccessor) client).setUserAPIService(userAPIService);
         ((MinecraftClientAccessor) client).setSocialInteractionManager(new SocialInteractionsManager(client, userAPIService));
+        ((MinecraftClientAccessor) client).setProfileKeys(ProfileKeys.create(userAPIService, s, client.runDirectory.toPath()));
         ((MinecraftClientAccessor) client).setSkinProvider(new PlayerSkinProvider(
                 client.getTextureManager(),
                 ((PlayerSkinProviderAccessor) client.getSkinProvider()).getSkinCacheDir(),
