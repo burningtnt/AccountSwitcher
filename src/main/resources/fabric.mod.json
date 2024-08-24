@@ -20,6 +20,14 @@
   ],
   "depends": {
     "fabricloader": ">=0.15.11",
-    "java": ">=17"
+    "java": ">=17",
+    "accountsx-adapter-mc": "*",
+    "accountsx-adapter-authlib": "*"
+  },
+  "custom": {
+    "accountsx:impl-lookup-accessor": [
+      "net.burningtnt.accountsx.core.utils.access.UnsafeLookupAccessor",
+      "net.burningtnt.accountsx.core.utils.access.FFMAPILookupAccessor"
+    ]
   }
 }

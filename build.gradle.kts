@@ -19,7 +19,7 @@ buildscript {
     }
 }
 
-rootProject.version = "1.1.2"
+rootProject.version = "1.1.3"
 
 repositories {
     maven(url = "https://maven.fabricmc.net/")
@@ -92,6 +92,8 @@ val universal = tasks.create("universal") {
             val e = fs.getPath("/fabric.mod.json").bufferedReader().use {
                 Gson().fromJson(it, JsonElement::class.java)
             } as JsonObject
+
+            (e.get("depends") as JsonObject).addProperty("fabric-api", "*")
 
             val jars = JsonArray().also {
                 e.add("jars", it)

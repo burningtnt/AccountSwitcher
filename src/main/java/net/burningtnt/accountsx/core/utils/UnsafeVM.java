@@ -3,6 +3,8 @@ package net.burningtnt.accountsx.core.utils;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import net.burningtnt.accountsx.core.AccountsX;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.metadata.CustomValue;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -11,7 +13,6 @@ import sun.misc.Unsafe;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -24,20 +25,25 @@ public final class UnsafeVM {
 
     @SuppressWarnings("deprecation")
     private static final Supplier<MethodHandles.Lookup> IMPL_LOOKUP = Suppliers.memoize(() -> {
-        // This might NOT work in future versions of JDK due to JEP 471, where it had been settled to remove the memory access method in JDK 24.
-        // But there's no existed plans for restrict the usage of FFM API.
-        // We have a workaround for future JDK releases here: https://gist.github.com/burningtnt/c188e65f048c2cf096db095e5858b5af
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            Unsafe U = (Unsafe) theUnsafe.get(null);
-            Field implLookup = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
-            Object base = U.staticFieldBase(implLookup);
-            long l = U.staticFieldOffset(implLookup);
-            return (MethodHandles.Lookup) U.getObject(base, l);
-        } catch (Throwable t) {
-            throw fail("MethodHandles.Lookup::IMPL_LOOKUP", t);
+        CustomValue.CvArray impls = FabricLoader.getInstance().getModContainer(AccountsX.MOD_ID).orElseThrow(
+                () -> new IllegalStateException("I should be loaded.")
+        ).getMetadata().getCustomValue("accountsx:impl-lookup-accessor").getAsArray();
+
+        int l = impls.size();
+        Throwable[] ts = new Throwable[l];
+        for (int i = 0; i < l; i++) {
+            try {
+                return (MethodHandles.Lookup) MethodHandles.publicLookup().findStatic(
+                        Class.forName(impls.get(i).getAsString()),
+                        "get",
+                        MethodType.methodType(MethodHandles.Lookup.class)
+                ).invokeExact();
+            } catch (Throwable t) {
+                ts[i] = t;
+            }
         }
+
+        throw fail("MethodHandles.Lookup::IMPL_LOOKUP", ts);
     });
 
     private static final Function<Class<?>, MethodHandle> UNSAFE_ALLOCATOR = new Function<>() {
@@ -124,12 +130,24 @@ public final class UnsafeVM {
     }
 
     private static final class UnexpectedClassChangeError extends Error {
+        public UnexpectedClassChangeError(String message, Throwable[] ts) {
+            super(message);
+
+            for (Throwable t : ts) {
+                addSuppressed(t);
+            }
+        }
+
         public UnexpectedClassChangeError(String message, Throwable cause) {
             super(message, cause);
         }
     }
 
     public static Error fail(String hackTarget, Throwable t) {
+        return new UnexpectedClassChangeError("Cannot hack " + hackTarget + " due to unexpected changes. Please remove " + AccountsX.MOD_NAME, t);
+    }
+
+    public static Error fail(String hackTarget, Throwable... t) {
         return new UnexpectedClassChangeError("Cannot hack " + hackTarget + " due to unexpected changes. Please remove " + AccountsX.MOD_NAME, t);
     }
 }

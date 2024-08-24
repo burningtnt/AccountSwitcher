@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "accountsx-adapter-mc",
-  "version": "${version}",
+  "version": "${version}-${minecraft}",
   "name": "Accounts X Minecraft Adapter",
   "description": "",
   "authors": [
